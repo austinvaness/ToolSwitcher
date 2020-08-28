@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.30225.117
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ToolSwitcher", "ToolSwitcher\ToolSwitcher.csproj", "{CC953B33-F2BD-44F0-AE75-2442B27797BA}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{CC953B33-F2BD-44F0-AE75-2442B27797BA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CC953B33-F2BD-44F0-AE75-2442B27797BA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CC953B33-F2BD-44F0-AE75-2442B27797BA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CC953B33-F2BD-44F0-AE75-2442B27797BA}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {6A956090-5E2B-451C-86A9-C0A6202BD38E}
+	EndGlobalSection
+EndGlobal
