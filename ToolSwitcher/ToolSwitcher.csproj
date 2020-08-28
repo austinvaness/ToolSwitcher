@@ -109,8 +109,15 @@
     <Compile Include="Tools\GrinderTool.cs" />
     <Compile Include="Tools\WelderTool.cs" />
   </ItemGroup>
+  <ItemGroup />
   <ItemGroup>
-    <Folder Include="Workshop\" />
+    <Content Include="Workshop\metadata.mod" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\.editorconfig">
+      <Link>.editorconfig</Link>
+    </None>
+    <None Include="Workshop\modinfo.sbmi" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
