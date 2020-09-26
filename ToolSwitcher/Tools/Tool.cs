@@ -56,7 +56,7 @@ namespace avaness.ToolSwitcher.Tools
 
         public bool HandleInput()
         {
-            if (Enabled && MyAPIGateway.Input.IsNewKeyPressed(Keybind) && !MyAPIGateway.Input.IsAnyCtrlKeyPressed())
+            if (Enabled && MyAPIGateway.Input.IsNewKeyPressed(Keybind))
                 return Equip();
             return false;
         }
@@ -76,6 +76,16 @@ namespace avaness.ToolSwitcher.Tools
             }
             MyVisualScriptLogicProvider.SetToolbarPage(Page, p.IdentityId);
             MyVisualScriptLogicProvider.SwitchToolbarToSlot(Slot, p.IdentityId);
+            return false;
+        }
+
+        public bool HasId(MyDefinitionId toolId)
+        {
+            foreach(MyDefinitionId id in Ids)
+            {
+                if (id == toolId)
+                    return true;
+            }
             return false;
         }
 

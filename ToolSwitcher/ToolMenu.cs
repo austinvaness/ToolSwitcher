@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using VRage.Game;
 using VRage.Input;
 using VRage.ModAPI;
 
@@ -19,6 +20,7 @@ namespace avaness.ToolSwitcher
         private readonly HudAPIv2.MenuItem btnEnabled;
         private readonly Tool tool;
         private readonly ToolGroups config;
+        private bool interactable = true;
 
         public ToolMenu(HudAPIv2.MenuCategoryBase category, Tool tool, ToolGroups config)
         {
@@ -31,14 +33,31 @@ namespace avaness.ToolSwitcher
             btnEnabled = new HudAPIv2.MenuItem("Enabled - " + tool.Enabled, toolCategory, OnEnabledSubmit);
         }
 
+        public void SetInteractable(bool interactable)
+        {
+            toolCategory.Interactable = interactable;
+            keyInput.Interactable = interactable;
+            slotInput.Interactable = interactable;
+            pageInput.Interactable = interactable;
+            btnEnabled.Interactable = interactable;
+            this.interactable = interactable;
+        }
+
         private void OnEnabledSubmit()
         {
+            if (!interactable)
+                return;
+
             tool.Enabled = !tool.Enabled;
             btnEnabled.Text = "Enabled - " + tool.Enabled;
+            config.Save();
         }
 
         private void OnSlotSubmit(string s)
         {
+            if (!interactable)
+                return;
+
             int slot;
             s = s.Trim();
             if(s.Length == 1 && int.TryParse(s, out slot) && slot >= 1 && slot <= 9)
@@ -53,6 +72,9 @@ namespace avaness.ToolSwitcher
 
         private void OnPageSubmit(string s)
         {
+            if (!interactable)
+                return;
+
             int page;
             s = s.Trim();
             if(s.Length == 1 && int.TryParse(s, out page) && page >= 1 && page <= 9)
@@ -67,8 +89,10 @@ namespace avaness.ToolSwitcher
 
         private void OnKeySubmit(MyKeys key, bool shift, bool ctrl, bool alt)
         {
+            if (!interactable)
+                return;
+
             tool.Keybind = key;
-            config.ToolEdited(tool);
             config.Save();
             keyInput.Text = "Key - " + ToolSwitcherSession.GetKeyName(key);
         }

@@ -1,4 +1,5 @@
 ﻿using avaness.ToolSwitcher.Tools;
+using Sandbox.Definitions;
 using Sandbox.ModAPI;
 using System;
 using System.Collections;
@@ -7,6 +8,7 @@ using System.ComponentModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using VRage.Game;
 using VRage.Game.ModAPI;
 
 namespace avaness.ToolSwitcher
@@ -68,6 +70,25 @@ namespace avaness.ToolSwitcher
             return tools.Contains(tool);
         }
 
+        public bool TryGetTool(MyDefinitionId toolId, out Tool tool)
+        {
+            foreach (Tool t in tools)
+            {
+                if (t.HasId(toolId))
+                {
+                    tool = t;
+                    return true;
+                }
+            }
+            tool = null;
+            return false;
+        }
+
+        public bool IsSlot(int page, int slot)
+        {
+            return this.page == page && this.slot == slot;
+        }
+
         public IEnumerator<Tool> GetEnumerator()
         {
             return tools.GetEnumerator();
@@ -83,7 +104,7 @@ namespace avaness.ToolSwitcher
             if (tools.Count == 0 || p.Character == null)
                 return;
 
-            if (tools.Count > 1)
+            if (tools.Count > 1 && !MyAPIGateway.Input.IsAnyCtrlKeyPressed() && !MyAPIGateway.Input.IsAnyAltKeyPressed())
             {
                 FindVisibleTool();
                 if(visible >= 0)

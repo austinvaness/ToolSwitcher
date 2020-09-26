@@ -21,11 +21,33 @@ namespace avaness.ToolSwitcher.Tools
     {
         private const string fileName = "ToolSwitcher-Settings.xml";
         private readonly List<ToolGroup> groups = new List<ToolGroup>();
-        private HudAPIv2 hud;
+        private readonly HudAPIv2 hud;
         private HudAPIv2.MenuRootCategory hudCategory;
         private HudAPIv2.MenuKeybindInput equipInput;
         private readonly char[] space = new char[] { ' ' };
         private readonly IMyPlayer p = MyAPIGateway.Session.Player;
+
+        private bool menuEnabled = true;
+        public bool MenuEnabled
+        {
+            get
+            {
+                return menuEnabled;
+            }
+            set
+            {
+                if(hud.Heartbeat && menuEnabled != value)
+                {
+                    grinderMenu.SetInteractable(value);
+                    welderMenu.SetInteractable(value);
+                    drillMenu.SetInteractable(value);
+                    rifleMenu.SetInteractable(value);
+                    hudCategory.Interactable = value;
+                    equipInput.Interactable = value;
+                    menuEnabled = value;
+                }
+            }
+        }
 
         public ToolGroups()
         {
@@ -131,6 +153,9 @@ namespace avaness.ToolSwitcher.Tools
 
         private void OnEquipAllKeySubmit(MyKeys key, bool shift, bool ctrl, bool alt)
         {
+            if (!menuEnabled)
+                return;
+
             EquipAllKey = key;
             equipInput.Text = "Equip All Key - " + ToolSwitcherSession.GetKeyName(key);
             Save();
@@ -168,6 +193,7 @@ namespace avaness.ToolSwitcher.Tools
 
         public void ToolEdited(Tool tool)
         {
+            bool toolbar = ToolSwitcherSession.IsToolbarCharacter();
             for (int i = groups.Count - 1; i >= 0; i--)
             {
                 ToolGroup g = groups[i];
@@ -175,6 +201,8 @@ namespace avaness.ToolSwitcher.Tools
                 {
                     if (g.Count == 0)
                         groups.RemoveAtFast(i);
+                    else if(toolbar)
+                        g.First().Equip();
                 }
             }
             
@@ -189,6 +217,8 @@ namespace avaness.ToolSwitcher.Tools
             }
 
             groups.Add(new ToolGroup(tool.Page, tool.Slot, tool));
+            if(toolbar)
+                tool.Equip();
         }
 
         public IEnumerator<ToolGroup> GetEnumerator()
