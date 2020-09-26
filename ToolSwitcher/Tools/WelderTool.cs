@@ -33,9 +33,9 @@ namespace avaness.ToolSwitcher.Tools
             return p.Character.EquippedTool is IMyWelder;
         }
 
-        protected override IMyHandheldGunObject<MyToolBase> GetHandTool()
+        /*protected override IMyHandheldGunObject<MyToolBase> GetHandTool()
         {
             return p.Character.EquippedTool as IMyWelder;
-        }
+        }*/
     }
 }

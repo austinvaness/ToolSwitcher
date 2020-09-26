@@ -104,9 +104,10 @@
     <Compile Include="ToolGroup.cs" />
     <Compile Include="ToolMenu.cs" />
     <Compile Include="Tools\DrillTool.cs" />
-    <Compile Include="Tools\PlayerData.cs" />
+    <Compile Include="Tools\ToolGroups.cs" />
     <Compile Include="Tools\Tool.cs" />
     <Compile Include="Tools\GrinderTool.cs" />
+    <Compile Include="Tools\RifleTool.cs" />
     <Compile Include="Tools\WelderTool.cs" />
   </ItemGroup>
   <ItemGroup />

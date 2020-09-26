@@ -32,10 +32,5 @@ namespace avaness.ToolSwitcher.Tools
         {
             return p.Character.EquippedTool is IMyAngleGrinder;
         }
-
-        protected override IMyHandheldGunObject<MyToolBase> GetHandTool()
-        {
-            return p.Character.EquippedTool as IMyAngleGrinder;
-        }
     }
 }

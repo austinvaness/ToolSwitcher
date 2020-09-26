@@ -16,17 +16,25 @@ namespace avaness.ToolSwitcher
         private readonly HudAPIv2.MenuSubCategory toolCategory;
         private readonly HudAPIv2.MenuKeybindInput keyInput;
         private readonly HudAPIv2.MenuTextInput slotInput, pageInput;
+        private readonly HudAPIv2.MenuItem btnEnabled;
         private readonly Tool tool;
-        private readonly PlayerData config;
+        private readonly ToolGroups config;
 
-        public ToolMenu(HudAPIv2.MenuCategoryBase category, Tool tool, PlayerData config)
+        public ToolMenu(HudAPIv2.MenuCategoryBase category, Tool tool, ToolGroups config)
         {
             this.tool = tool;
             this.config = config;
             toolCategory = new HudAPIv2.MenuSubCategory(tool.Name, category, tool.Name);
-            keyInput = new HudAPIv2.MenuKeybindInput("Key - " + MyAPIGateway.Input.GetKeyName(tool.Keybind), toolCategory, "Press any key.", OnKeySubmit);
+            keyInput = new HudAPIv2.MenuKeybindInput("Key - " + ToolSwitcherSession.GetKeyName(tool.Keybind), toolCategory, "Press any key.", OnKeySubmit);
             slotInput = new HudAPIv2.MenuTextInput("Slot - " + (tool.Slot + 1), toolCategory, "Enter a slot number 1-9.", OnSlotSubmit);
             pageInput = new HudAPIv2.MenuTextInput("Page - " + (tool.Page + 1), toolCategory, "Enter a page number 1-9.", OnPageSubmit);
+            btnEnabled = new HudAPIv2.MenuItem("Enabled - " + tool.Enabled, toolCategory, OnEnabledSubmit);
+        }
+
+        private void OnEnabledSubmit()
+        {
+            tool.Enabled = !tool.Enabled;
+            btnEnabled.Text = "Enabled - " + tool.Enabled;
         }
 
         private void OnSlotSubmit(string s)
@@ -62,7 +70,7 @@ namespace avaness.ToolSwitcher
             tool.Keybind = key;
             config.ToolEdited(tool);
             config.Save();
-            keyInput.Text = "Key - " + MyAPIGateway.Input.GetKeyName(key);
+            keyInput.Text = "Key - " + ToolSwitcherSession.GetKeyName(key);
         }
     }
 }

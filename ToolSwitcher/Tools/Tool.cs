@@ -18,6 +18,7 @@ namespace avaness.ToolSwitcher.Tools
     [XmlInclude(typeof(GrinderTool))]
     [XmlInclude(typeof(WelderTool))]
     [XmlInclude(typeof(DrillTool))]
+    [XmlInclude(typeof(RifleTool))]
     public abstract class Tool : IEquatable<Tool>
     {
         public abstract string Name { get; }
@@ -31,6 +32,9 @@ namespace avaness.ToolSwitcher.Tools
 
         [XmlElement]
         public int Page { get; set; }
+
+        [XmlElement]
+        public bool Enabled { get; set; }
 
         protected IMyPlayer p = MyAPIGateway.Session.Player;
 
@@ -47,17 +51,21 @@ namespace avaness.ToolSwitcher.Tools
             Keybind = key;
             Slot = slot;
             Page = page;
+            Enabled = true;
         }
 
         public bool HandleInput()
         {
-            if (MyAPIGateway.Input.IsNewKeyPressed(Keybind))
+            if (Enabled && MyAPIGateway.Input.IsNewKeyPressed(Keybind))
                 return Equip();
             return false;
         }
 
         public bool Equip()
         {
+            if (!Enabled)
+                return false;
+
             MyDefinitionId newTool;
             if (TryGetNextId(out newTool))
             {
@@ -73,6 +81,7 @@ namespace avaness.ToolSwitcher.Tools
 
         public void ClearSlot()
         {
+            MyVisualScriptLogicProvider.SetToolbarPage(Page, p.IdentityId);
             MyVisualScriptLogicProvider.ClearToolbarSlot(Slot, p.IdentityId);
         }
 
@@ -126,7 +135,10 @@ namespace avaness.ToolSwitcher.Tools
 
         public abstract bool IsInHand();
 
-        protected abstract IMyHandheldGunObject<MyToolBase> GetHandTool();
+        private IMyHandheldGunObject<MyToolBase> GetHandTool()
+        {
+            return p.Character.EquippedTool as IMyHandheldGunObject<MyToolBase>;
+        }
 
         public override bool Equals(object obj)
         {
@@ -136,18 +148,12 @@ namespace avaness.ToolSwitcher.Tools
         public bool Equals(Tool other)
         {
             return other != null &&
-                   Name == other.Name &&
-                   Slot == other.Slot &&
-                   Page == other.Page;
+                   Name == other.Name;
         }
 
         public override int GetHashCode()
         {
-            int hashCode = 731447093;
-            hashCode = hashCode * -1521134295 + EqualityComparer<string>.Default.GetHashCode(Name);
-            hashCode = hashCode * -1521134295 + Slot.GetHashCode();
-            hashCode = hashCode * -1521134295 + Page.GetHashCode();
-            return hashCode;
+            return 539060726 + EqualityComparer<string>.Default.GetHashCode(Name);
         }
 
         public static bool operator ==(Tool left, Tool right)
@@ -159,6 +165,5 @@ namespace avaness.ToolSwitcher.Tools
         {
             return !(left == right);
         }
-
     }
 }
