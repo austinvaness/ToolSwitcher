@@ -70,7 +70,7 @@ namespace avaness.ToolSwitcher
 
         private bool IsEnabled()
         {
-            return MyAPIGateway.Session.Player.Character != null && MyAPIGateway.Gui.GetCurrentScreen == MyTerminalPageEnum.None
+            return MyAPIGateway.Session.Player.Character != null && MyAPIGateway.Session.Player.Character.Parent == null && MyAPIGateway.Gui.GetCurrentScreen == MyTerminalPageEnum.None
                     && !MyAPIGateway.Gui.IsCursorVisible && !MyAPIGateway.Gui.ChatEntryVisible && !MyAPIGateway.Session.IsCameraUserControlledSpectator;
         }
 

@@ -56,7 +56,7 @@ namespace avaness.ToolSwitcher.Tools
 
         public bool HandleInput()
         {
-            if (Enabled && MyAPIGateway.Input.IsNewKeyPressed(Keybind))
+            if (Enabled && MyAPIGateway.Input.IsNewKeyPressed(Keybind) && !MyAPIGateway.Input.IsAnyCtrlKeyPressed())
                 return Equip();
             return false;
         }
