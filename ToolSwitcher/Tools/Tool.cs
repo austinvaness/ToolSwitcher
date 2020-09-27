@@ -57,11 +57,27 @@ namespace avaness.ToolSwitcher.Tools
         public bool HandleInput()
         {
             if (Enabled && MyAPIGateway.Input.IsNewKeyPressed(Keybind))
-                return Equip();
+                return Equip(true);
             return false;
         }
 
-        public bool Equip()
+        public bool Upgrade(MyDefinitionId currentId)
+        {
+            if (!Enabled)
+                return false;
+
+            MyDefinitionId newTool;
+            if (TryGetNextId(currentId, out newTool))
+            {
+                MyVisualScriptLogicProvider.SetToolbarPage(Page, p.IdentityId);
+                MyVisualScriptLogicProvider.SetToolbarSlotToItem(Slot, newTool, p.IdentityId);
+                MyVisualScriptLogicProvider.SwitchToolbarToSlot(Slot, p.IdentityId);
+                return true;
+            }
+            return false;
+        }
+
+        public bool Equip(bool switchSlot = false)
         {
             if (!Enabled)
                 return false;
@@ -74,8 +90,12 @@ namespace avaness.ToolSwitcher.Tools
                 MyVisualScriptLogicProvider.SwitchToolbarToSlot(Slot, p.IdentityId);
                 return true;
             }
-            MyVisualScriptLogicProvider.SetToolbarPage(Page, p.IdentityId);
-            MyVisualScriptLogicProvider.SwitchToolbarToSlot(Slot, p.IdentityId);
+
+            if(switchSlot)
+            {
+                MyVisualScriptLogicProvider.SetToolbarPage(Page, p.IdentityId);
+                MyVisualScriptLogicProvider.SwitchToolbarToSlot(Slot, p.IdentityId);
+            }
             return false;
         }
 
@@ -97,23 +117,32 @@ namespace avaness.ToolSwitcher.Tools
 
         private bool TryGetNextId(out MyDefinitionId newTool)
         {
-            int currentSlot = -1;
             MyDefinitionId existing;
-            if (TryGetCurrentId(out existing))
+            TryGetCurrentId(out existing);
+            return TryGetNextId(existing, out newTool);
+        }
+
+        private bool TryGetNextId(MyDefinitionId existing, out MyDefinitionId newTool)
+        {
+            int currentId = -1;
+            for (int i = 0; i < Ids.Length; i++)
             {
-                for (int i = 0; i < Ids.Length; i++)
+                if (Ids[i] == existing)
                 {
-                    if (Ids[i] == existing)
-                    {
-                        currentSlot = i;
-                        break;
-                    }
+                    currentId = i;
+                    break;
                 }
+            }
+
+            if (MyAPIGateway.Session.CreativeMode)
+            {
+                newTool = Ids.Last();
+                return currentId < 0 || newTool != existing;
             }
 
             IMyInventory inv = p.Character.GetInventory();
 
-            for (int i = Ids.Length - 1; i > currentSlot; i--)
+            for (int i = Ids.Length - 1; i > currentId; i--)
             {
                 if (inv.ContainItems(1, Ids[i]))
                 {
@@ -122,18 +151,13 @@ namespace avaness.ToolSwitcher.Tools
                 }
             }
 
-            if(currentSlot >= 0)
-            {
-                newTool = existing;
-                return true;
-            }
-
             newTool = new MyDefinitionId();
             return false;
         }
+
         protected bool TryGetCurrentId(out MyDefinitionId existing)
         {
-            IMyHandheldGunObject<MyToolBase> tool = GetHandTool();
+            IMyHandheldGunObject<MyDeviceBase> tool = GetHandTool();
             if (tool == null)
             {
                 existing = new MyDefinitionId();
@@ -145,9 +169,9 @@ namespace avaness.ToolSwitcher.Tools
 
         public abstract bool IsInHand();
 
-        private IMyHandheldGunObject<MyToolBase> GetHandTool()
+        private IMyHandheldGunObject<MyDeviceBase> GetHandTool()
         {
-            return p.Character.EquippedTool as IMyHandheldGunObject<MyToolBase>;
+            return p.Character.EquippedTool as IMyHandheldGunObject<MyDeviceBase>;
         }
 
         public override bool Equals(object obj)

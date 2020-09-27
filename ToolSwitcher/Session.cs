@@ -21,6 +21,7 @@ namespace avaness.ToolSwitcher
         public static ToolSwitcherSession Instance;
         private bool init = false;
         private bool equipAll = false;
+        private readonly List<EquippedToolAction> equippedTools = new List<EquippedToolAction>();
 
         private ToolGroups config;
 
@@ -50,6 +51,10 @@ namespace avaness.ToolSwitcher
                 return;
             if (!init)
                 Start();
+
+            foreach(EquippedToolAction toolAction in equippedTools.ToArray())
+                toolAction.Do(config);
+            equippedTools.Clear();
 
             if(MyAPIGateway.Session.Player.Character != null)
             {
@@ -89,25 +94,21 @@ namespace avaness.ToolSwitcher
             if(IsToolbarCharacter() && MyAPIGateway.Gui.ActiveGamePlayScreen == "MyGuiScreenCubeBuilder" 
                 && typeId == "MyObjectBuilder_PhysicalGunObject" && MyDefinitionId.TryParse(typeId, subtypeId, out handId))
             {
-                foreach (ToolGroup g in config)
+                EquippedToolAction newToolAction = new EquippedToolAction(handId, page, slot);
+                foreach (EquippedToolAction toolAction in equippedTools)
                 {
-                    Tool t;
-                    if (g.TryGetTool(handId, out t) && !g.IsSlot(page, slot))
-                    {
-                        t.ClearSlot();
-                        t.Page = page;
-                        t.Slot = slot;
-                        config.ToolEdited(t);
-                        config.Save();
+                    if (toolAction.Update(newToolAction))
                         return;
-                    }
                 }
+                equippedTools.Add(newToolAction);
             }
         }
 
         public static bool IsToolbarCharacter()
         {
-            return MyAPIGateway.Session.Player.Character.Parent == null;
+            if (MyAPIGateway.Session.Player.Character == null)
+                return false;
+            return MyAPIGateway.Session.Player.Character.Parent == null && MyAPIGateway.Session.Player.Controller.ControlledEntity is IMyCharacter;
         }
 
         private static bool IsEnabled()
@@ -121,6 +122,54 @@ namespace avaness.ToolSwitcher
             if (key == MyKeys.None)
                 return "None";
             return MyAPIGateway.Input.GetKeyName(key);
+        }
+
+        private class EquippedToolAction
+        {
+            private readonly MyDefinitionId id;
+            private readonly int slot;
+            private int page;
+
+            public EquippedToolAction(MyDefinitionId id, int page, int slot)
+            {
+                this.id = id;
+                this.page = page;
+                this.slot = slot;
+            }
+
+            public bool Update(EquippedToolAction other)
+            {
+                if (id != other.id || slot != other.slot)
+                    return false;
+                // The reason for these shenanigans: Keen's code sometimes uses page=0 in the parameter.
+                if (page == 0 && other.page != 0)
+                    page = other.page;
+                return true;
+            }
+
+            public void Do(ToolGroups config)
+            {
+                foreach (ToolGroup g in config)
+                {
+                    Tool t;
+                    if (g.TryGetTool(id, out t))
+                    {
+                        if (g.IsSlot(page, slot))
+                        {
+                            t.Upgrade(id);
+                        }
+                        else
+                        {
+                            t.ClearSlot();
+                            t.Page = page;
+                            t.Slot = slot;
+                            config.ToolEdited(t);
+                            config.Save();
+                        }
+                        return;
+                    }
+                }
+            }
         }
     }
 }
