@@ -38,8 +38,8 @@ namespace avaness.ToolSwitcher.Tools
             {
                 if(hud.Heartbeat && menuEnabled != value)
                 {
-                    grinderMenu.SetInteractable(value);
                     welderMenu.SetInteractable(value);
+                    grinderMenu.SetInteractable(value);
                     drillMenu.SetInteractable(value);
                     rifleMenu.SetInteractable(value);
                     hudCategory.Interactable = value;
@@ -51,13 +51,13 @@ namespace avaness.ToolSwitcher.Tools
 
         public ToolGroups()
         {
-            grinder = new GrinderTool(MyKeys.None, 0, 0);
-            ToolEdited(grinder);
             welder = new WelderTool(MyKeys.None, 0, 0);
             ToolEdited(welder);
-            drill = new DrillTool(MyKeys.None, 0, 0);
+            grinder = new GrinderTool(MyKeys.None, 1, 0);
+            ToolEdited(grinder);
+            drill = new DrillTool(MyKeys.None, 2, 0);
             ToolEdited(drill);
-            rifle = new RifleTool(MyKeys.None, 0, 0);
+            rifle = new RifleTool(MyKeys.None, 3, 0);
             ToolEdited(rifle);
             hud = new HudAPIv2(OnHudReady);
         }
@@ -70,8 +70,8 @@ namespace avaness.ToolSwitcher.Tools
         private void OnHudReady()
         {
             hudCategory = new HudAPIv2.MenuRootCategory("Tool Switcher", HudAPIv2.MenuRootCategory.MenuFlag.PlayerMenu, "Tool Switcher");
-            grinderMenu = new ToolMenu(hudCategory, grinder, this);
             welderMenu = new ToolMenu(hudCategory, welder, this);
+            grinderMenu = new ToolMenu(hudCategory, grinder, this);
             drillMenu = new ToolMenu(hudCategory, drill, this);
             rifleMenu = new ToolMenu(hudCategory, rifle, this);
             equipInput = new HudAPIv2.MenuKeybindInput("Equip All Key - " + ToolSwitcherSession.GetKeyName(EquipAllKey), hudCategory, "Press any key.", OnEquipAllKeySubmit);

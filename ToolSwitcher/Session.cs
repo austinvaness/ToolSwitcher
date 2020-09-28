@@ -42,7 +42,8 @@ namespace avaness.ToolSwitcher
             init = true;
             config = ToolGroups.Load();
             MyVisualScriptLogicProvider.ToolbarItemChanged += ToolbarItemChanged;
-            equipAll = true;
+            if(!MyAPIGateway.Session.CreativeMode)
+                equipAll = true;
         }
 
         public override void UpdateAfterSimulation()
