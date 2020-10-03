@@ -113,6 +113,7 @@
   <ItemGroup />
   <ItemGroup>
     <Content Include="Workshop\metadata.mod" />
+    <Content Include="Workshop\thumb.jpg" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\.editorconfig">

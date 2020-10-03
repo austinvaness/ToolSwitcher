@@ -26,7 +26,8 @@ namespace avaness.ToolSwitcher
         {
             this.tool = tool;
             this.config = config;
-            toolCategory = new HudAPIv2.MenuSubCategory(tool.Name, category, tool.Name);
+            toolCategory = new HudAPIv2.MenuSubCategory("", category, tool.Name);
+            SetCategoryText();
             keyInput = new HudAPIv2.MenuKeybindInput("Key - " + ToolSwitcherSession.GetKeyName(tool.Keybind), toolCategory, "Press any key.", OnKeySubmit);
             slotInput = new HudAPIv2.MenuTextInput("Slot - " + (tool.Slot + 1), toolCategory, "Enter a slot number 1-9.", OnSlotSubmit);
             pageInput = new HudAPIv2.MenuTextInput("Page - " + (tool.Page + 1), toolCategory, "Enter a page number 1-9.", OnPageSubmit);
@@ -67,7 +68,13 @@ namespace avaness.ToolSwitcher
                 config.ToolEdited(tool);
                 config.Save();
                 slotInput.Text = "Slot - " + s;
+                SetCategoryText();
             }
+        }
+
+        private void SetCategoryText()
+        {
+            toolCategory.Text = $"{tool.Name}  ({tool.Page + 1}, {tool.Slot + 1})";
         }
 
         private void OnPageSubmit(string s)
@@ -84,6 +91,7 @@ namespace avaness.ToolSwitcher
                 config.ToolEdited(tool);
                 config.Save();
                 pageInput.Text = "Page - " + s;
+                SetCategoryText();
             }
         }
 

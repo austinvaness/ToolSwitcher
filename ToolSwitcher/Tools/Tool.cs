@@ -91,11 +91,9 @@ namespace avaness.ToolSwitcher.Tools
                 return true;
             }
 
-            if(switchSlot)
-            {
-                MyVisualScriptLogicProvider.SetToolbarPage(Page, p.IdentityId);
+            MyVisualScriptLogicProvider.SetToolbarPage(Page, p.IdentityId);
+            if (switchSlot)
                 MyVisualScriptLogicProvider.SwitchToolbarToSlot(Slot, p.IdentityId);
-            }
             return false;
         }
 

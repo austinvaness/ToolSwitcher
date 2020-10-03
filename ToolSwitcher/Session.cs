@@ -155,6 +155,9 @@ namespace avaness.ToolSwitcher
                     Tool t;
                     if (g.TryGetTool(id, out t))
                     {
+                        if (!t.Enabled)
+                            return;
+
                         if (g.IsSlot(page, slot))
                         {
                             t.Upgrade(id);

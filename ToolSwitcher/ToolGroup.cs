@@ -30,17 +30,6 @@ namespace avaness.ToolSwitcher
             this.tools = new List<Tool>(tools);
         }
 
-        public void Debug()
-        {
-            StringBuilder sb = new StringBuilder();
-            sb.Append('(').Append(slot + 1).Append(") ");
-            foreach (Tool tool in tools)
-                sb.Append(tool.Name).Append(" & ");
-            if (tools.Count > 0)
-                sb.Length -= 3;
-            MyAPIGateway.Utilities.ShowNotification(sb.ToString(), 16);
-        }
-
         public bool Add(Tool tool)
         {
             if (tools.Contains(tool))

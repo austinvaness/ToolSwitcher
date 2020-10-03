@@ -52,13 +52,13 @@ namespace avaness.ToolSwitcher.Tools
         public ToolGroups()
         {
             welder = new WelderTool(MyKeys.None, 0, 0);
-            ToolEdited(welder);
+            ToolEdited(welder, false);
             grinder = new GrinderTool(MyKeys.None, 1, 0);
-            ToolEdited(grinder);
+            ToolEdited(grinder, false);
             drill = new DrillTool(MyKeys.None, 2, 0);
-            ToolEdited(drill);
+            ToolEdited(drill, false);
             rifle = new RifleTool(MyKeys.None, 3, 0);
-            ToolEdited(rifle);
+            ToolEdited(rifle, false);
             hud = new HudAPIv2(OnHudReady);
         }
 
@@ -75,13 +75,6 @@ namespace avaness.ToolSwitcher.Tools
             drillMenu = new ToolMenu(hudCategory, drill, this);
             rifleMenu = new ToolMenu(hudCategory, rifle, this);
             equipInput = new HudAPIv2.MenuKeybindInput("Equip All Key - " + ToolSwitcherSession.GetKeyName(EquipAllKey), hudCategory, "Press any key.", OnEquipAllKeySubmit);
-        }
-
-        public void Debug()
-        {
-            MyAPIGateway.Utilities.ShowNotification($"{groups.Count} total groups.", 16);
-            foreach (ToolGroup g in groups)
-                g.Debug();
         }
 
         private ToolMenu grinderMenu;
@@ -191,9 +184,9 @@ namespace avaness.ToolSwitcher.Tools
             writer.Close();
         }
 
-        public void ToolEdited(Tool tool)
+        public void ToolEdited(Tool tool, bool equip = true)
         {
-            bool toolbar = ToolSwitcherSession.IsToolbarCharacter();
+            bool toolbar = ToolSwitcherSession.IsToolbarCharacter() && equip;
             for (int i = groups.Count - 1; i >= 0; i--)
             {
                 ToolGroup g = groups[i];
@@ -212,6 +205,8 @@ namespace avaness.ToolSwitcher.Tools
                 if (g.ShouldContain(tool))
                 {
                     g.Add(tool);
+                    if (toolbar)
+                        tool.Equip();
                     return;
                 }
             }
