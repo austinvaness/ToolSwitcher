@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using avaness.ToolSwitcher.Tools;
+using DarkHelmet.BuildVision2;
 using Sandbox.Definitions;
 using Sandbox.Game;
 using Sandbox.Game.Screens.Helpers;
@@ -24,6 +25,11 @@ namespace avaness.ToolSwitcher
         private readonly List<EquippedToolAction> equippedTools = new List<EquippedToolAction>();
 
         private ToolGroups config;
+
+        public override void Init(MyObjectBuilder_SessionComponent sessionComponent)
+        {
+            BvApiClient.Init(DebugName);
+        }
 
         public override void LoadData()
         {
@@ -115,7 +121,7 @@ namespace avaness.ToolSwitcher
         private static bool IsEnabled()
         {
             return MyAPIGateway.Gui.GetCurrentScreen == MyTerminalPageEnum.None && !MyAPIGateway.Gui.IsCursorVisible && !MyAPIGateway.Gui.ChatEntryVisible 
-                && !MyAPIGateway.Session.IsCameraUserControlledSpectator && string.IsNullOrWhiteSpace(MyAPIGateway.Gui.ActiveGamePlayScreen);
+                && !MyAPIGateway.Session.IsCameraUserControlledSpectator && string.IsNullOrWhiteSpace(MyAPIGateway.Gui.ActiveGamePlayScreen) && (!BvApiClient.Registered || !BvApiClient.Open);
         }
 
         public static string GetKeyName(MyKeys key)
