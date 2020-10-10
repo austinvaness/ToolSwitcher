@@ -18,9 +18,9 @@ namespace avaness.ToolSwitcher
         private readonly HudAPIv2.MenuKeybindInput keyInput;
         private readonly HudAPIv2.MenuTextInput slotInput, pageInput;
         private readonly HudAPIv2.MenuItem btnEnabled;
-        private readonly Tool tool;
         private readonly ToolGroups config;
         private bool interactable = true;
+        private Tool tool;
 
         public ToolMenu(HudAPIv2.MenuCategoryBase category, Tool tool, ToolGroups config)
         {
@@ -32,6 +32,16 @@ namespace avaness.ToolSwitcher
             slotInput = new HudAPIv2.MenuTextInput("Slot - " + (tool.Slot + 1), toolCategory, "Enter a slot number 1-9.", OnSlotSubmit);
             pageInput = new HudAPIv2.MenuTextInput("Page - " + (tool.Page + 1), toolCategory, "Enter a page number 1-9.", OnPageSubmit);
             btnEnabled = new HudAPIv2.MenuItem("Enabled - " + tool.Enabled, toolCategory, OnEnabledSubmit);
+        }
+
+        public void SetTool(Tool tool)
+        {
+            this.tool = tool;
+            SetCategoryText();
+            keyInput.Text = "Key - " + ToolSwitcherSession.GetKeyName(tool.Keybind);
+            slotInput.Text = "Slot - " + (tool.Slot + 1);
+            pageInput.Text = "Page - " + (tool.Page + 1);
+            btnEnabled.Text = "Enabled - " + tool.Enabled;
         }
 
         public void SetInteractable(bool interactable)
@@ -75,6 +85,13 @@ namespace avaness.ToolSwitcher
         private void SetCategoryText()
         {
             toolCategory.Text = $"{tool.Name}  ({tool.Page + 1}, {tool.Slot + 1})";
+        }
+
+        public void SlotUpdated()
+        {
+            SetCategoryText();
+            slotInput.Text = "Slot - " + (tool.Slot + 1);
+            pageInput.Text = "Page - " + (tool.Page + 1);
         }
 
         private void OnPageSubmit(string s)

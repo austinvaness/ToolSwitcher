@@ -28,9 +28,9 @@ namespace avaness.ToolSwitcher.Tools
         public GrinderTool(MyKeys key, int slot, int page) : base(key, slot, page)
         { }
 
-        public override bool IsInHand()
+        protected override bool IsHandType(IMyHandheldGunObject<MyDeviceBase> handTool)
         {
-            return p.Character.EquippedTool is IMyAngleGrinder;
+            return handTool is IMyAngleGrinder;
         }
     }
 }

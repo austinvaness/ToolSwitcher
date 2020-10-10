@@ -20,10 +20,10 @@ namespace avaness.ToolSwitcher
     public class ToolSwitcherSession : MySessionComponentBase
     {
         public static ToolSwitcherSession Instance;
+        
         private bool init = false;
         private bool equipAll = false;
         private readonly List<EquippedToolAction> equippedTools = new List<EquippedToolAction>();
-
         private ToolGroups config;
 
         public override void Init(MyObjectBuilder_SessionComponent sessionComponent)
@@ -48,7 +48,7 @@ namespace avaness.ToolSwitcher
             init = true;
             config = ToolGroups.Load();
             MyVisualScriptLogicProvider.ToolbarItemChanged += ToolbarItemChanged;
-            if(!MyAPIGateway.Session.CreativeMode)
+            if (!MyAPIGateway.Session.CreativeMode)
                 equipAll = true;
         }
 
@@ -56,10 +56,12 @@ namespace avaness.ToolSwitcher
         {
             if (MyAPIGateway.Session?.Player == null)
                 return;
+
             if (!init)
                 Start();
 
-            foreach(EquippedToolAction toolAction in equippedTools.ToArray())
+
+            foreach (EquippedToolAction toolAction in equippedTools.ToArray())
                 toolAction.Do(config);
             equippedTools.Clear();
 
@@ -173,6 +175,8 @@ namespace avaness.ToolSwitcher
                             t.ClearSlot();
                             t.Page = page;
                             t.Slot = slot;
+                            if (t.Menu != null)
+                                t.Menu.SlotUpdated();
                             config.ToolEdited(t);
                             config.Save();
                         }

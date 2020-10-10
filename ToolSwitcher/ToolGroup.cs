@@ -10,6 +10,7 @@ using System.Text;
 using System.Threading.Tasks;
 using VRage.Game;
 using VRage.Game.ModAPI;
+using VRage.ModAPI;
 
 namespace avaness.ToolSwitcher
 {
@@ -19,7 +20,6 @@ namespace avaness.ToolSwitcher
         private readonly int slot;
         private readonly int page;
         private readonly IMyPlayer p = MyAPIGateway.Session.Player;
-        private int visible = -1;
 
         public int Count => tools.Count;
 
@@ -93,32 +93,31 @@ namespace avaness.ToolSwitcher
             if (tools.Count == 0 || p.Character == null)
                 return;
 
-            if (tools.Count > 1 && !MyAPIGateway.Input.IsAnyCtrlKeyPressed() && !MyAPIGateway.Input.IsAnyAltKeyPressed())
+            IMyInput input = MyAPIGateway.Input;
+            if (tools.Count > 1 && !input.IsAnyCtrlKeyPressed() && !input.IsAnyAltKeyPressed())
             {
-                FindVisibleTool();
-                if(visible >= 0)
+                int scroll = ReadScroll();
+                if (scroll > 0)
                 {
-                    int scroll = ReadScroll();
-                    if (scroll > 0)
+                    int visible = FindVisibleTool();
+                    if (visible >= 0)
                     {
                         for (int i = LoopInc(visible); i != visible; i = LoopInc(i))
                         {
                             if (tools[i].Equip())
-                            {
-                                visible = i;
                                 break;
-                            }
                         }
                     }
-                    else if (scroll < 0)
+                }
+                else if (scroll < 0)
+                {
+                    int visible = FindVisibleTool();
+                    if (visible >= 0)
                     {
                         for (int i = LoopDec(visible); i != visible; i = LoopDec(i))
                         {
                             if (tools[i].Equip())
-                            {
-                                visible = i;
                                 break;
-                            }
                         }
                     }
                 }
@@ -127,22 +126,18 @@ namespace avaness.ToolSwitcher
             for(int i = 0; i < tools.Count; i++)
             {
                 Tool tool = tools[i];
-                if (tool.HandleInput())
-                    visible = i;
+                tool.HandleInput();
             }
         }
 
-        private void FindVisibleTool()
+        private int FindVisibleTool()
         {
             for (int i = 0; i < tools.Count; i++)
             {
                 if (tools[i].IsInHand())
-                {
-                    visible = i;
-                    return;
-                }
+                    return i;
             }
-            visible = -1;
+            return -1;
         }
 
         private int LoopInc(int i)

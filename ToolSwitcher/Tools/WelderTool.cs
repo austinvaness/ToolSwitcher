@@ -28,14 +28,9 @@ namespace avaness.ToolSwitcher.Tools
         public WelderTool(MyKeys key, int slot, int page) : base(key, slot, page)
         { }
 
-        public override bool IsInHand()
+        protected override bool IsHandType(IMyHandheldGunObject<MyDeviceBase> handTool)
         {
-            return p.Character.EquippedTool is IMyWelder;
+            return handTool is IMyWelder;
         }
-
-        /*protected override IMyHandheldGunObject<MyToolBase> GetHandTool()
-        {
-            return p.Character.EquippedTool as IMyWelder;
-        }*/
     }
 }

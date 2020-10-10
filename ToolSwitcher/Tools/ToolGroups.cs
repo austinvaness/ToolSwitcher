@@ -1,4 +1,5 @@
 ﻿using Draygo.API;
+using Sandbox.Definitions;
 using Sandbox.Game;
 using Sandbox.Game.Entities;
 using Sandbox.Game.Weapons;
@@ -10,6 +11,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Xml.Serialization;
+using VRage;
+using VRage.Game;
 using VRage.Game.ModAPI;
 using VRage.Input;
 using VRage.Utils;
@@ -24,10 +27,9 @@ namespace avaness.ToolSwitcher.Tools
         private readonly HudAPIv2 hud;
         private HudAPIv2.MenuRootCategory hudCategory;
         private HudAPIv2.MenuKeybindInput equipInput;
-        private readonly char[] space = new char[] { ' ' };
-        private readonly IMyPlayer p = MyAPIGateway.Session.Player;
 
         private bool menuEnabled = true;
+        [XmlIgnore]
         public bool MenuEnabled
         {
             get
@@ -38,12 +40,14 @@ namespace avaness.ToolSwitcher.Tools
             {
                 if(hud.Heartbeat && menuEnabled != value)
                 {
-                    welderMenu.SetInteractable(value);
-                    grinderMenu.SetInteractable(value);
-                    drillMenu.SetInteractable(value);
-                    rifleMenu.SetInteractable(value);
+                    welder.Menu.SetInteractable(value);
+                    grinder.Menu.SetInteractable(value);
+                    drill.Menu.SetInteractable(value);
+                    rifle.Menu.SetInteractable(value);
                     hudCategory.Interactable = value;
                     equipInput.Interactable = value;
+                    foreach (ModTool t in modTools)
+                        t.Menu.SetInteractable(value);
                     menuEnabled = value;
                 }
             }
@@ -59,6 +63,18 @@ namespace avaness.ToolSwitcher.Tools
             ToolEdited(drill, false);
             rifle = new RifleTool(MyKeys.None, 3, 0);
             ToolEdited(rifle, false);
+
+            foreach(MyHandItemDefinition def in MyDefinitionManager.Static.GetHandItemDefinitions())
+            {
+                if(!def.Context.IsBaseGame)
+                {
+                    ModTool modTool = new ModTool(MyKeys.None, 0, 0, def.PhysicalItemId);
+                    modTools.Add(modTool);
+                    ToolEdited(modTool, false);
+                }
+            }
+            serializableTools = modTools.ToArray();
+
             hud = new HudAPIv2(OnHudReady);
         }
 
@@ -70,14 +86,20 @@ namespace avaness.ToolSwitcher.Tools
         private void OnHudReady()
         {
             hudCategory = new HudAPIv2.MenuRootCategory("Tool Switcher", HudAPIv2.MenuRootCategory.MenuFlag.PlayerMenu, "Tool Switcher");
-            welderMenu = new ToolMenu(hudCategory, welder, this);
-            grinderMenu = new ToolMenu(hudCategory, grinder, this);
-            drillMenu = new ToolMenu(hudCategory, drill, this);
-            rifleMenu = new ToolMenu(hudCategory, rifle, this);
+            welder.Menu = new ToolMenu(hudCategory, welder, this);
+            grinder.Menu = new ToolMenu(hudCategory, grinder, this);
+            drill.Menu = new ToolMenu(hudCategory, drill, this);
+            rifle.Menu = new ToolMenu(hudCategory, rifle, this);
+
+            for(int i = 0; i < modTools.Count; i++)
+            {
+                ModTool t = modTools[i];
+                t.Menu = new ToolMenu(hudCategory, t, this);
+            }
+
             equipInput = new HudAPIv2.MenuKeybindInput("Equip All Key - " + ToolSwitcherSession.GetKeyName(EquipAllKey), hudCategory, "Press any key.", OnEquipAllKeySubmit);
         }
 
-        private ToolMenu grinderMenu;
         private GrinderTool grinder;
         [XmlElement]
         public GrinderTool Grinder
@@ -88,12 +110,17 @@ namespace avaness.ToolSwitcher.Tools
             }
             set
             {
+                ToolMenu menu = grinder.Menu;
                 grinder = value;
+                if (menu != null)
+                {
+                    menu.SetTool(grinder);
+                    grinder.Menu = menu;
+                }
                 ToolEdited(grinder);
             }
         }
 
-        private ToolMenu welderMenu;
         private WelderTool welder;
         [XmlElement]
         public WelderTool Welder
@@ -104,12 +131,17 @@ namespace avaness.ToolSwitcher.Tools
             }
             set
             {
+                ToolMenu menu = welder.Menu;
                 welder = value;
+                if (menu != null)
+                {
+                    menu.SetTool(welder);
+                    welder.Menu = menu;
+                }
                 ToolEdited(welder);
             }
         }
 
-        private ToolMenu drillMenu;
         private DrillTool drill;
         [XmlElement]
         public DrillTool Drill
@@ -120,12 +152,17 @@ namespace avaness.ToolSwitcher.Tools
             }
             set
             {
+                ToolMenu menu = drill.Menu;
                 drill = value;
+                if (menu != null)
+                {
+                    menu.SetTool(drill);
+                    drill.Menu = menu;
+                }
                 ToolEdited(drill);
             }
         }
 
-        private ToolMenu rifleMenu;
         private RifleTool rifle;
         [XmlElement]
         public RifleTool Rifle
@@ -136,10 +173,63 @@ namespace avaness.ToolSwitcher.Tools
             }
             set
             {
+                ToolMenu menu = rifle.Menu;
                 rifle = value;
+                if (menu != null)
+                {
+                    menu.SetTool(rifle);
+                    rifle.Menu = menu;
+                }
                 ToolEdited(rifle);
             }
         }
+
+        private List<ModTool> modTools = new List<ModTool>();
+        private ModTool[] serializableTools = new ModTool[0];
+        [XmlArray("ModTools")]
+        public ModTool[] ModTools
+        {
+            get
+            {
+                return serializableTools;
+            }
+            set
+            {
+                Dictionary<string, Tuple<int, ModTool>> modTools = new Dictionary<string, Tuple<int, ModTool>>();
+                for(int i = 0; i < this.modTools.Count; i++)
+                {
+                    ModTool t = this.modTools[i];
+                    modTools.Add(t.Name, new Tuple<int, ModTool>(i, t));
+                }
+
+                foreach(ModTool t in value)
+                {
+                    if (t.Id.TypeId.IsNull)
+                        continue;
+
+                    Tuple<int, ModTool> tuple;
+                    if(modTools.TryGetValue(t.Name, out tuple))
+                    {
+                        ToolMenu menu = tuple.Value2.Menu;
+                        if (menu != null)
+                        {
+                            menu.SetTool(t);
+                            t.Menu = menu;
+                        }
+                        this.modTools[tuple.Value1] = t;
+                        ToolEdited(t);
+                        tuple.Value2 = t;
+                        modTools[t.Name] = tuple;
+                    }
+                    else
+                    {
+                        modTools[t.Name] = new Tuple<int, ModTool>(-1, t);
+                    }
+                }
+                serializableTools = modTools.Values.Select(t => t.Value2).ToArray();
+            }
+        }
+
 
         [XmlElement]
         public MyKeys EquipAllKey { get; set; } = MyKeys.None;
@@ -166,6 +256,7 @@ namespace avaness.ToolSwitcher.Tools
                     ToolGroups config = MyAPIGateway.Utilities.SerializeFromXML<ToolGroups>(xmlText);
                     if (config == null)
                         throw new NullReferenceException("Failed to serialize from xml.");
+                    config.Save();
                     return config;
                 }
             }
@@ -219,6 +310,19 @@ namespace avaness.ToolSwitcher.Tools
         public IEnumerator<ToolGroup> GetEnumerator()
         {
             return groups.GetEnumerator();
+        }
+
+
+        private class Tuple<T1, T2>
+        {
+            public T1 Value1;
+            public T2 Value2;
+            public Tuple() { }
+            public Tuple(T1 val1, T2 val2)
+            {
+                Value1 = val1;
+                Value2 = val2;
+            }
         }
     }
 }

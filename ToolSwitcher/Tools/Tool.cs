@@ -19,16 +19,32 @@ namespace avaness.ToolSwitcher.Tools
     [XmlInclude(typeof(WelderTool))]
     [XmlInclude(typeof(DrillTool))]
     [XmlInclude(typeof(RifleTool))]
-    public abstract class Tool : IEquatable<Tool>
+    [XmlInclude(typeof(ModTool))]
+    public abstract class Tool : IEquatable<Tool>, IComparable<Tool>
     {
-        public abstract string Name { get; }
         protected abstract MyDefinitionId[] Ids { get; }
+
+        [XmlIgnore]
+        public abstract string Name { get; }
+        [XmlIgnore]
+        public ToolMenu Menu;
 
         [XmlElement]
         public MyKeys Keybind { get; set; }
 
+        private int slot;
         [XmlElement]
-        public int Slot { get; set; }
+        public int Slot 
+        { 
+            get
+            {
+                return slot;
+            }
+            set
+            {
+                slot = value;
+            } 
+        }
 
         [XmlElement]
         public int Page { get; set; }
@@ -165,7 +181,20 @@ namespace avaness.ToolSwitcher.Tools
             return true;
         }
 
-        public abstract bool IsInHand();
+        public bool IsInHand()
+        {
+            IMyHandheldGunObject<MyDeviceBase> handTool = GetHandTool();
+            if (handTool == null || !IsHandType(handTool))
+                return false;
+            foreach(MyDefinitionId id in Ids)
+            {
+                if (id == handTool.PhysicalItemDefinition.Id)
+                    return true;
+            }
+            return false;
+        }
+
+        protected abstract bool IsHandType(IMyHandheldGunObject<MyDeviceBase> handTool);
 
         private IMyHandheldGunObject<MyDeviceBase> GetHandTool()
         {
@@ -186,6 +215,11 @@ namespace avaness.ToolSwitcher.Tools
         public override int GetHashCode()
         {
             return 539060726 + EqualityComparer<string>.Default.GetHashCode(Name);
+        }
+
+        public int CompareTo(Tool other)
+        {
+            return Name.CompareTo(other);
         }
 
         public static bool operator ==(Tool left, Tool right)

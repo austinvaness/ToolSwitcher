@@ -33,9 +33,10 @@ namespace avaness.ToolSwitcher.Tools
         public RifleTool(MyKeys key, int slot, int page) : base(key, slot, page)
         { }
 
-        public override bool IsInHand()
+
+        protected override bool IsHandType(IMyHandheldGunObject<MyDeviceBase> handTool)
         {
-            return p.Character.EquippedTool is IMyAutomaticRifleGun;
+            return handTool is IMyAutomaticRifleGun;
         }
     }
 }
