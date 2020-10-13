@@ -1,11 +1,6 @@
 ﻿using Sandbox.Game.Entities;
 using Sandbox.Game.Weapons;
 using Sandbox.ModAPI.Weapons;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using VRage.Game;
 using VRage.Input;
 
@@ -28,10 +23,14 @@ namespace avaness.ToolSwitcher.Tools
         /// Used for serialization only.
         /// </summary>
         private RifleTool() : base()
-        { }
+        {
+            EquipIndex = 3;
+        }
 
         public RifleTool(MyKeys key, int slot, int page) : base(key, slot, page)
-        { }
+        {
+            EquipIndex = 3;
+        }
 
 
         protected override bool IsHandType(IMyHandheldGunObject<MyDeviceBase> handTool)

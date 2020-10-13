@@ -1,18 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
+using avaness.ToolSwitcher.Net;
 using avaness.ToolSwitcher.Tools;
 using DarkHelmet.BuildVision2;
-using Sandbox.Definitions;
 using Sandbox.Game;
-using Sandbox.Game.Screens.Helpers;
 using Sandbox.ModAPI;
-using VRage;
 using VRage.Game;
 using VRage.Game.Components;
 using VRage.Game.ModAPI;
-using VRage.Input;
-using VRage.Utils;
+using VRage.ModAPI;
 
 namespace avaness.ToolSwitcher
 {
@@ -25,6 +21,9 @@ namespace avaness.ToolSwitcher
         private bool equipAll = false;
         private readonly List<EquippedToolAction> equippedTools = new List<EquippedToolAction>();
         private ToolGroups config;
+
+        private bool IsServer => MyAPIGateway.Session.IsServer || MyAPIGateway.Session.OnlineMode == MyOnlineModeEnum.OFFLINE;
+        private bool IsClient => !IsServer || !MyAPIGateway.Utilities.IsDedicated;
 
         public override void Init(MyObjectBuilder_SessionComponent sessionComponent)
         {
@@ -41,57 +40,131 @@ namespace avaness.ToolSwitcher
             Instance = null;
             config?.Unload();
             MyVisualScriptLogicProvider.ToolbarItemChanged -= ToolbarItemChanged;
+            MyVisualScriptLogicProvider.PlayerDropped -= ItemDropped;
+            MyVisualScriptLogicProvider.PlayerPickedUp -= ItemPickedUp;
+            MyVisualScriptLogicProvider.PlayerSpawned -= PlayerSpawned;
+            MyAPIGateway.Multiplayer.UnregisterMessageHandler(EventPacket.PacketId, EventPacket.Received);
         }
 
         private void Start()
         {
             init = true;
-            config = ToolGroups.Load();
-            MyVisualScriptLogicProvider.ToolbarItemChanged += ToolbarItemChanged;
-            if (!MyAPIGateway.Session.CreativeMode)
-                equipAll = true;
+
+            if(IsServer)
+            {
+                MyVisualScriptLogicProvider.PlayerDropped += ItemDropped;
+                MyVisualScriptLogicProvider.PlayerPickedUp += ItemPickedUp;
+                MyVisualScriptLogicProvider.PlayerSpawned += PlayerSpawned;
+            }
+            else
+            {
+                MyAPIGateway.Multiplayer.RegisterMessageHandler(EventPacket.PacketId, EventPacket.Received);
+            }
+
+            if(IsClient)
+            {
+                config = ToolGroups.Load();
+                MyVisualScriptLogicProvider.ToolbarItemChanged += ToolbarItemChanged;
+                if (!MyAPIGateway.Session.CreativeMode)
+                    equipAll = true;
+            }
+        }
+
+        private void PlayerSpawned(long playerId)
+        {
+            new EventPacket(EventPacket.Mode.Spawn, new MyDefinitionId()).SendTo(playerId);
+        }
+
+        private void ItemPickedUp(string itemTypeName, string itemSubTypeName, string entityName, long playerId, int amount)
+        {
+            MyDefinitionId handId;
+            if (amount == 1 && itemTypeName == "MyObjectBuilder_PhysicalGunObject" && MyDefinitionId.TryParse(itemTypeName, itemSubTypeName, out handId))
+                new EventPacket(EventPacket.Mode.PickUp, handId).SendTo(playerId);
+        }
+
+        private void ItemDropped(string itemTypeName, string itemSubTypeName, long playerId, int amount)
+        {
+            MyDefinitionId handId;
+            if (amount == 1 && itemTypeName == "MyObjectBuilder_PhysicalGunObject" && MyDefinitionId.TryParse(itemTypeName, itemSubTypeName, out handId))
+                new EventPacket(EventPacket.Mode.Drop, handId).SendTo(playerId);
+        }
+
+        public void Spawned()
+        {
+            equipAll = true;
+        }
+
+        public void CheckItem(MyDefinitionId id, bool added)
+        {
+            Tool t;
+            ToolGroup tg;
+            int index;
+            if (IsToolbarCharacter() && config.TryGetTool(id, out t, out index, out tg) && t.Enabled)
+            {
+                if (added)
+                    t.Equip();
+                else if (!t.Equip(id))
+                    tg.EquipAny(id);
+            }
         }
 
         public override void UpdateAfterSimulation()
         {
-            if (MyAPIGateway.Session?.Player == null)
+            if (MyAPIGateway.Session == null)
+                return;
+
+            if (IsClient && MyAPIGateway.Session.Player == null)
                 return;
 
             if (!init)
                 Start();
 
-
-            foreach (EquippedToolAction toolAction in equippedTools.ToArray())
-                toolAction.Do(config);
-            equippedTools.Clear();
-
-            if(MyAPIGateway.Session.Player.Character != null)
+            if (IsClient)
             {
-                bool toolbar = IsToolbarCharacter();
-                config.MenuEnabled = toolbar;
-                if (toolbar && IsEnabled())
-                {
-                    if (MyAPIGateway.Input.IsNewKeyPressed(config.EquipAllKey))
-                        equipAll = true;
+                foreach (EquippedToolAction toolAction in equippedTools.ToArray())
+                    toolAction.Do(config);
+                equippedTools.Clear();
 
-                    if (equipAll)
+                if (MyAPIGateway.Session.Player.Character != null)
+                {
+                    bool toolbar = IsToolbarCharacter();
+                    config.MenuEnabled = toolbar;
+                    if (toolbar && IsEnabled())
                     {
-                        foreach (ToolGroup g in config)
-                            g.First().Equip();
-                        equipAll = false;
-                    }
-                    else
-                    {
-                        foreach (ToolGroup g in config)
-                            g.HandleInput();
+                        IMyInput input = MyAPIGateway.Input;
+                        
+                        if (equipAll || input.IsNewKeyPressed(config.EquipAllKey))
+                        {
+                            foreach (ToolGroup g in config)
+                                g.EquipAny();
+                            equipAll = false;
+                        }
+                        else if(input.IsNewKeyPressed(config.UpgradeKey))
+                        {
+                            Tool t;
+                            ToolGroup tg;
+                            if (config.TryGetTool(out t, out tg))
+                                t.Upgrade();
+                        }
+                        else if(input.IsNewKeyPressed(config.DowngradeKey))
+                        {
+                            Tool t;
+                            ToolGroup tg;
+                            if (config.TryGetTool(out t, out tg))
+                                t.Downgrade();
+                        }
+                        else
+                        {
+                            foreach (ToolGroup g in config)
+                                g.HandleInput();
+                        }
                     }
                 }
+                else
+                {
+                    config.MenuEnabled = false;
+                }
             }
-            else
-            {
-                config.MenuEnabled = false;
-            }
-
         }
 
         private void ToolbarItemChanged(long entityId, string typeId, string subtypeId, int page, int slot)
@@ -126,9 +199,9 @@ namespace avaness.ToolSwitcher
                 && !MyAPIGateway.Session.IsCameraUserControlledSpectator && string.IsNullOrWhiteSpace(MyAPIGateway.Gui.ActiveGamePlayScreen) && (!BvApiClient.Registered || !BvApiClient.Open);
         }
 
-        public static string GetKeyName(MyKeys key)
+        public static string GetKeyName(VRage.Input.MyKeys key)
         {
-            if (key == MyKeys.None)
+            if (key == VRage.Input.MyKeys.None)
                 return "None";
             return MyAPIGateway.Input.GetKeyName(key);
         }
@@ -158,29 +231,30 @@ namespace avaness.ToolSwitcher
 
             public void Do(ToolGroups config)
             {
-                foreach (ToolGroup g in config)
+                Tool t;
+                ToolGroup tg;
+                int index;
+                if (config.TryGetTool(id, out t, out index, out tg) && t.Enabled)
                 {
-                    Tool t;
-                    if (g.TryGetTool(id, out t))
+                    if (tg.IsSlot(page, slot))
                     {
-                        if (!t.Enabled)
-                            return;
+                        if (MyAPIGateway.Session.CreativeMode)
+                            t.EquipIndex = index;
 
-                        if (g.IsSlot(page, slot))
-                        {
-                            t.Upgrade(id);
-                        }
-                        else
-                        {
-                            t.ClearSlot();
-                            t.Page = page;
-                            t.Slot = slot;
-                            if (t.Menu != null)
-                                t.Menu.SlotUpdated();
-                            config.ToolEdited(t);
-                            config.Save();
-                        }
-                        return;
+                        t.Equip();
+                    }
+                    else
+                    {
+                        if (MyAPIGateway.Session.CreativeMode)
+                            t.EquipIndex = index;
+
+                        t.ClearSlot();
+                        t.Page = page;
+                        t.Slot = slot;
+                        if (t.Menu != null)
+                            t.Menu.SlotUpdated();
+                        config.ToolEdited(t, true);
+                        config.Save();
                     }
                 }
             }

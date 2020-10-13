@@ -1,21 +1,14 @@
 ﻿using Draygo.API;
 using Sandbox.Definitions;
-using Sandbox.Game;
 using Sandbox.Game.Entities;
 using Sandbox.Game.Weapons;
 using Sandbox.ModAPI;
-using Sandbox.ModAPI.Weapons;
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Xml.Serialization;
-using VRage;
 using VRage.Game;
-using VRage.Game.ModAPI;
 using VRage.Input;
-using VRage.Utils;
 
 namespace avaness.ToolSwitcher.Tools
 {
@@ -27,6 +20,8 @@ namespace avaness.ToolSwitcher.Tools
         private readonly HudAPIv2 hud;
         private HudAPIv2.MenuRootCategory hudCategory;
         private HudAPIv2.MenuKeybindInput equipInput;
+        private HudAPIv2.MenuKeybindInput upgradeInput;
+        private HudAPIv2.MenuKeybindInput downgradeInput;
 
         private bool menuEnabled = true;
         [XmlIgnore]
@@ -46,6 +41,8 @@ namespace avaness.ToolSwitcher.Tools
                     rifle.Menu.SetInteractable(value);
                     hudCategory.Interactable = value;
                     equipInput.Interactable = value;
+                    upgradeInput.Interactable = value;
+                    downgradeInput.Interactable = value;
                     foreach (ModTool t in modTools)
                         t.Menu.SetInteractable(value);
                     menuEnabled = value;
@@ -98,6 +95,8 @@ namespace avaness.ToolSwitcher.Tools
             }
 
             equipInput = new HudAPIv2.MenuKeybindInput("Equip All Key - " + ToolSwitcherSession.GetKeyName(EquipAllKey), hudCategory, "Press any key.", OnEquipAllKeySubmit);
+            upgradeInput = new HudAPIv2.MenuKeybindInput("Upgrade Key - " + ToolSwitcherSession.GetKeyName(UpgradeKey), hudCategory, "Press any key.", OnUpgradeKeySubmit);
+            downgradeInput = new HudAPIv2.MenuKeybindInput("Downgrade Key - " + ToolSwitcherSession.GetKeyName(DowngradeKey), hudCategory, "Press any key.", OnDowngradeKeySubmit);
         }
 
         private GrinderTool grinder;
@@ -244,6 +243,32 @@ namespace avaness.ToolSwitcher.Tools
             Save();
         }
 
+        [XmlElement]
+        public MyKeys UpgradeKey { get; set; } = MyKeys.None;
+
+        private void OnUpgradeKeySubmit(MyKeys key, bool shift, bool ctrl, bool alt)
+        {
+            if (!menuEnabled)
+                return;
+
+            UpgradeKey = key;
+            upgradeInput.Text = "Upgrade Key - " + ToolSwitcherSession.GetKeyName(key);
+            Save();
+        }
+
+        [XmlElement]
+        public MyKeys DowngradeKey { get; set; } = MyKeys.None;
+
+        private void OnDowngradeKeySubmit(MyKeys key, bool shift, bool ctrl, bool alt)
+        {
+            if (!menuEnabled)
+                return;
+
+            DowngradeKey = key;
+            downgradeInput.Text = "Downgrade Key - " + ToolSwitcherSession.GetKeyName(key);
+            Save();
+        }
+
         public static ToolGroups Load()
         {
             try
@@ -275,9 +300,14 @@ namespace avaness.ToolSwitcher.Tools
             writer.Close();
         }
 
-        public void ToolEdited(Tool tool, bool equip = true)
+        public void ToolEdited(Tool tool, bool? equip = null)
         {
-            bool toolbar = ToolSwitcherSession.IsToolbarCharacter() && equip;
+            bool toolbar;
+            if (equip.HasValue)
+                toolbar = equip.Value;
+            else
+                toolbar = ToolSwitcherSession.IsToolbarCharacter();
+
             for (int i = groups.Count - 1; i >= 0; i--)
             {
                 ToolGroup g = groups[i];
@@ -285,8 +315,8 @@ namespace avaness.ToolSwitcher.Tools
                 {
                     if (g.Count == 0)
                         groups.RemoveAtFast(i);
-                    else if(toolbar)
-                        g.First().Equip();
+                    else if (toolbar)
+                        g.EquipAny();
                 }
             }
             
@@ -305,6 +335,37 @@ namespace avaness.ToolSwitcher.Tools
             groups.Add(new ToolGroup(tool.Page, tool.Slot, tool));
             if(toolbar)
                 tool.Equip();
+        }
+
+        public bool TryGetTool(out Tool tool, out ToolGroup toolGroup)
+        {
+            var hand = MyAPIGateway.Session.Player.Character.EquippedTool as IMyHandheldGunObject<MyDeviceBase>;
+            if (hand == null)
+            {
+                tool = null;
+                toolGroup = null;
+                return false;
+            }
+            int discard;
+            return TryGetTool(hand.PhysicalItemDefinition.Id, out tool, out discard, out toolGroup);
+        }
+
+        public bool TryGetTool(MyDefinitionId id, out Tool tool, out int index, out ToolGroup toolGroup)
+        {
+            tool = null;
+            toolGroup = null;
+            foreach (ToolGroup g in groups)
+            {
+                Tool t;
+                if (g.TryGetTool(id, out t, out index))
+                {
+                    tool = t;
+                    toolGroup = g;
+                    return true;
+                }
+            }
+            index = -1;
+            return false;
         }
 
         public IEnumerator<ToolGroup> GetEnumerator()

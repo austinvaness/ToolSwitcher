@@ -23,10 +23,14 @@ namespace avaness.ToolSwitcher.Tools
         /// Used for serialization only.
         /// </summary>
         private GrinderTool() : base()
-        { }
+        {
+            EquipIndex = 3;
+        }
 
         public GrinderTool(MyKeys key, int slot, int page) : base(key, slot, page)
-        { }
+        {
+            EquipIndex = 3;
+        }
 
         protected override bool IsHandType(IMyHandheldGunObject<MyDeviceBase> handTool)
         {

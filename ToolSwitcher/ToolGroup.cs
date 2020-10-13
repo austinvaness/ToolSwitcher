@@ -1,13 +1,8 @@
 ﻿using avaness.ToolSwitcher.Tools;
-using Sandbox.Definitions;
 using Sandbox.ModAPI;
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using VRage.Game;
 using VRage.Game.ModAPI;
 using VRage.ModAPI;
@@ -59,17 +54,18 @@ namespace avaness.ToolSwitcher
             return tools.Contains(tool);
         }
 
-        public bool TryGetTool(MyDefinitionId toolId, out Tool tool)
+        public bool TryGetTool(MyDefinitionId toolId, out Tool tool, out int index)
         {
             foreach (Tool t in tools)
             {
-                if (t.HasId(toolId))
+                if (t.HasId(toolId, out index))
                 {
                     tool = t;
                     return true;
                 }
             }
             tool = null;
+            index = -1;
             return false;
         }
 
@@ -159,6 +155,18 @@ namespace avaness.ToolSwitcher
         {
             return MyAPIGateway.Input.DeltaMouseScrollWheelValue();
         }
+
+        public bool EquipAny(MyDefinitionId? itemRemoved = null)
+        {
+            foreach(Tool t in tools)
+            {
+                if (t.Equip(itemRemoved))
+                    return true;
+            }
+            return false;
+        }
+
+
 
         public override bool Equals(object obj)
         {

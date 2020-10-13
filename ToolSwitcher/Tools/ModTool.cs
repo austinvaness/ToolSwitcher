@@ -1,10 +1,5 @@
 ﻿using Sandbox.Game.Entities;
 using Sandbox.Game.Weapons;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Xml.Serialization;
 using VRage.Game;
 using VRage.Input;
