@@ -294,10 +294,21 @@ namespace avaness.ToolSwitcher.Tools
 
         public void Save()
         {
-            var writer = MyAPIGateway.Utilities.WriteFileInGlobalStorage(fileName);
-            writer.Write(MyAPIGateway.Utilities.SerializeToXML(this));
-            writer.Flush();
-            writer.Close();
+            string data = MyAPIGateway.Utilities.SerializeToXML(this);
+            MyAPIGateway.Parallel.StartBackground(() => SaveFile(data));
+        }
+
+        private static void SaveFile(string data)
+        {
+            try
+            {
+                var writer = MyAPIGateway.Utilities.WriteFileInGlobalStorage(fileName);
+                writer.Write(data);
+                writer.Flush();
+                writer.Close();
+            }
+            catch
+            { }
         }
 
         public void ToolEdited(Tool tool, bool? equip = null)

@@ -44,6 +44,9 @@ namespace avaness.ToolSwitcher.Tools
         [XmlIgnore]
         public int EquipIndex { get; set; } = 0; // For creative mode.
 
+        public virtual bool CanScroll { get; } = true;
+
+
         /// <summary>
         /// Used for serialization only.
         /// </summary>

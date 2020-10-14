@@ -96,7 +96,7 @@ namespace avaness.ToolSwitcher
                 if (scroll > 0)
                 {
                     int visible = FindVisibleTool();
-                    if (visible >= 0)
+                    if (visible >= 0 && tools[visible].CanScroll)
                     {
                         for (int i = LoopInc(visible); i != visible; i = LoopInc(i))
                         {
@@ -108,7 +108,7 @@ namespace avaness.ToolSwitcher
                 else if (scroll < 0)
                 {
                     int visible = FindVisibleTool();
-                    if (visible >= 0)
+                    if (visible >= 0 && tools[visible].CanScroll)
                     {
                         for (int i = LoopDec(visible); i != visible; i = LoopDec(i))
                         {
