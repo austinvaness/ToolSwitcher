@@ -380,7 +380,7 @@ namespace avaness.ToolSwitcher.Tools
             if (equip.HasValue)
                 toolbar = equip.Value;
             else
-                toolbar = ToolSwitcherSession.IsToolbarCharacter();
+                toolbar = ToolSwitcherSession.IsToolbarCharacter() && ModEnabled;
 
             for (int i = groups.Count - 1; i >= 0; i--)
             {
