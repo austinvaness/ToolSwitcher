@@ -62,7 +62,7 @@ namespace avaness.ToolSwitcher.Net
                     ToolSwitcherSession.Instance.CheckItem(id, false);
                     break;
                 case Mode.Spawn:
-                    ToolSwitcherSession.Instance.Spawned();
+                    ToolSwitcherSession.Instance.EquipAll();
                     break;
             }
 

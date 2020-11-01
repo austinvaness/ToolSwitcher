@@ -9,6 +9,7 @@ using System.Linq;
 using System.Xml.Serialization;
 using VRage.Game;
 using VRage.Input;
+using VRage.Utils;
 
 namespace avaness.ToolSwitcher.Tools
 {
@@ -19,9 +20,13 @@ namespace avaness.ToolSwitcher.Tools
         private readonly List<ToolGroup> groups = new List<ToolGroup>();
         private readonly HudAPIv2 hud;
         private HudAPIv2.MenuRootCategory hudCategory;
+        private HudAPIv2.MenuSubCategory toolsCat;
+        private HudAPIv2.MenuSubCategory vanillaToolCat;
+        private List<HudAPIv2.MenuSubCategory> modToolCats;
         private HudAPIv2.MenuKeybindInput equipInput;
         private HudAPIv2.MenuKeybindInput upgradeInput;
         private HudAPIv2.MenuKeybindInput downgradeInput;
+        private HudAPIv2.MenuItem modEnabledInput;
 
         private bool menuEnabled = true;
         [XmlIgnore]
@@ -35,6 +40,7 @@ namespace avaness.ToolSwitcher.Tools
             {
                 if(hud.Heartbeat && menuEnabled != value)
                 {
+                    hudCategory.Interactable = value;
                     welder.Menu.SetInteractable(value);
                     grinder.Menu.SetInteractable(value);
                     drill.Menu.SetInteractable(value);
@@ -65,7 +71,23 @@ namespace avaness.ToolSwitcher.Tools
             {
                 if(!def.Context.IsBaseGame)
                 {
-                    ModTool modTool = new ModTool(MyKeys.None, 0, 0, def.PhysicalItemId);
+                    string modName = def.Context.ModName;
+                    if (string.IsNullOrWhiteSpace(modName))
+                    {
+                        if (string.IsNullOrWhiteSpace(def.Context.ModId))
+                            modName = null;
+                        else
+                            modName = def.Context.ModId.Trim();
+                    }
+                    else
+                    {
+                        modName = modName.Trim();
+                    }
+
+                    if (modName != null && modName.Length > 30)
+                        modName = modName.Substring(0, 30);
+
+                    ModTool modTool = new ModTool(MyKeys.None, 0, 0, def.PhysicalItemId, modName);
                     modTools.Add(modTool);
                     ToolEdited(modTool, false);
                 }
@@ -83,20 +105,60 @@ namespace avaness.ToolSwitcher.Tools
         private void OnHudReady()
         {
             hudCategory = new HudAPIv2.MenuRootCategory("Tool Switcher", HudAPIv2.MenuRootCategory.MenuFlag.PlayerMenu, "Tool Switcher");
-            welder.Menu = new ToolMenu(hudCategory, welder, this);
-            grinder.Menu = new ToolMenu(hudCategory, grinder, this);
-            drill.Menu = new ToolMenu(hudCategory, drill, this);
-            rifle.Menu = new ToolMenu(hudCategory, rifle, this);
+            modEnabledInput = new HudAPIv2.MenuItem("Mod Enabled - " + ModEnabled, hudCategory, OnModEnabledSubmit);
 
-            for(int i = 0; i < modTools.Count; i++)
+            toolsCat = new HudAPIv2.MenuSubCategory("Tools", hudCategory, "Tools");
+
+            if (modTools.Count == 0)
+                vanillaToolCat = toolsCat;
+            else
+                vanillaToolCat = new HudAPIv2.MenuSubCategory("Vanilla", toolsCat, "Vanilla Tools");
+            welder.Menu = new ToolMenu(vanillaToolCat, welder, this);
+            grinder.Menu = new ToolMenu(vanillaToolCat, grinder, this);
+            drill.Menu = new ToolMenu(vanillaToolCat, drill, this);
+            rifle.Menu = new ToolMenu(vanillaToolCat, rifle, this);
+
+            HudAPIv2.MenuSubCategory unknownCategory = null;
+            Dictionary<string, HudAPIv2.MenuSubCategory> modToolCats = new Dictionary<string, HudAPIv2.MenuSubCategory>();
+            for (int i = 0; i < modTools.Count; i++)
             {
                 ModTool t = modTools[i];
-                t.Menu = new ToolMenu(hudCategory, t, this);
+                HudAPIv2.MenuCategoryBase c;
+                if (t.ModName == null)
+                {
+                    if (unknownCategory == null)
+                        unknownCategory = new HudAPIv2.MenuSubCategory("Mod: Unknown", toolsCat, "Unknown");
+                    c = unknownCategory;
+                }
+                else
+                {
+                    HudAPIv2.MenuSubCategory subC;
+                    if (!modToolCats.TryGetValue(t.ModName, out subC))
+                    {
+                        subC = new HudAPIv2.MenuSubCategory("Mod: " + t.ModName, toolsCat, t.ModName);
+                        modToolCats[t.ModName] = subC;
+                    }
+                    c = subC;
+                }
+                t.Menu = new ToolMenu(c, t, this);
             }
+            this.modToolCats = modToolCats.Values.ToList();
 
             equipInput = new HudAPIv2.MenuKeybindInput("Equip All Key - " + ToolSwitcherSession.GetKeyName(EquipAllKey), hudCategory, "Press any key.", OnEquipAllKeySubmit);
             upgradeInput = new HudAPIv2.MenuKeybindInput("Upgrade Key - " + ToolSwitcherSession.GetKeyName(UpgradeKey), hudCategory, "Press any key.", OnUpgradeKeySubmit);
             downgradeInput = new HudAPIv2.MenuKeybindInput("Downgrade Key - " + ToolSwitcherSession.GetKeyName(DowngradeKey), hudCategory, "Press any key.", OnDowngradeKeySubmit);
+        }
+
+
+        [XmlElement]
+        public bool ModEnabled { get; set; } = true;
+
+        private void OnModEnabledSubmit()
+        {
+            ModEnabled = !ModEnabled;
+            modEnabledInput.Text = "Mod Enabled - " + ModEnabled;
+            Save();
+            ToolSwitcherSession.Instance.EquipAll();
         }
 
         private GrinderTool grinder;
@@ -217,6 +279,7 @@ namespace avaness.ToolSwitcher.Tools
                         }
                         this.modTools[tuple.Value1] = t;
                         ToolEdited(t);
+                        t.ModName = tuple.Value2.ModName;
                         tuple.Value2 = t;
                         modTools[t.Name] = tuple;
                     }

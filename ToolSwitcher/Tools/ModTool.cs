@@ -20,6 +20,9 @@ namespace avaness.ToolSwitcher.Tools
         private MyDefinitionId[] ids;
         private MyDefinitionId id;
 
+        [XmlIgnore]
+        public string ModName { get; set; }
+
         [XmlElement]
         public SerializableDefinitionId Id
         {
@@ -54,10 +57,11 @@ namespace avaness.ToolSwitcher.Tools
             
         }
 
-        public ModTool(MyKeys key, int slot, int page, MyDefinitionId id) : base(key, slot, page)
+        public ModTool(MyKeys key, int slot, int page, MyDefinitionId id, string modName) : base(key, slot, page)
         {
             Id = id;
             allowShift = id != PaintGun && id != ConcreteTool;
+            this.ModName = modName;
         }
 
         protected override MyDefinitionId[] Ids => ids;

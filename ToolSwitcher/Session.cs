@@ -89,7 +89,7 @@ namespace avaness.ToolSwitcher
                 new EventPacket(EventPacket.Mode.Drop, handId).SendTo(playerId);
         }
 
-        public void Spawned()
+        public void EquipAll()
         {
             equipAll = true;
         }
@@ -99,7 +99,7 @@ namespace avaness.ToolSwitcher
             Tool t;
             ToolGroup tg;
             int index;
-            if (IsToolbarCharacter() && config.TryGetTool(id, out t, out index, out tg) && t.Enabled)
+            if (config.ModEnabled && IsToolbarCharacter() && config.TryGetTool(id, out t, out index, out tg) && t.Enabled)
             {
                 if (added)
                     t.Equip();
@@ -173,7 +173,7 @@ namespace avaness.ToolSwitcher
                 return;
 
             MyDefinitionId handId;
-            if(IsToolbarCharacter() && MyAPIGateway.Gui.ActiveGamePlayScreen == "MyGuiScreenCubeBuilder" 
+            if(config.ModEnabled && IsToolbarCharacter() && MyAPIGateway.Gui.ActiveGamePlayScreen == "MyGuiScreenCubeBuilder" 
                 && typeId == "MyObjectBuilder_PhysicalGunObject" && MyDefinitionId.TryParse(typeId, subtypeId, out handId))
             {
                 EquippedToolAction newToolAction = new EquippedToolAction(handId, page, slot);
@@ -193,9 +193,9 @@ namespace avaness.ToolSwitcher
             return MyAPIGateway.Session.Player.Character.Parent == null && MyAPIGateway.Session.Player.Controller.ControlledEntity is IMyCharacter;
         }
 
-        private static bool IsEnabled()
+        private bool IsEnabled()
         {
-            return MyAPIGateway.Gui.GetCurrentScreen == MyTerminalPageEnum.None && !MyAPIGateway.Gui.IsCursorVisible && !MyAPIGateway.Gui.ChatEntryVisible 
+            return config.ModEnabled && MyAPIGateway.Gui.GetCurrentScreen == MyTerminalPageEnum.None && !MyAPIGateway.Gui.IsCursorVisible && !MyAPIGateway.Gui.ChatEntryVisible 
                 && !MyAPIGateway.Session.IsCameraUserControlledSpectator && string.IsNullOrWhiteSpace(MyAPIGateway.Gui.ActiveGamePlayScreen) && (!BvApiClient.Registered || !BvApiClient.Open);
         }
 
@@ -234,7 +234,7 @@ namespace avaness.ToolSwitcher
                 Tool t;
                 ToolGroup tg;
                 int index;
-                if (config.TryGetTool(id, out t, out index, out tg) && t.Enabled)
+                if (config.ModEnabled && config.TryGetTool(id, out t, out index, out tg) && t.Enabled)
                 {
                     if (tg.IsSlot(page, slot))
                     {
