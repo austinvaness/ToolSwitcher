@@ -11,10 +11,11 @@ using Sandbox.Game.Weapons;
 using Sandbox.Game.Entities.Character;
 using Sandbox.Game.Screens.Helpers;
 using avaness.ToolSwitcherPlugin.Tools;
-using Sandbox.Definitions;
 using Sandbox.Common.ObjectBuilders.Definitions;
 using avaness.ToolSwitcherPlugin.Slot;
 using Sandbox.ModAPI.Weapons;
+using VRage.Input;
+using DarkHelmet.BuildVision2;
 
 namespace avaness.ToolSwitcherPlugin
 {
@@ -32,6 +33,7 @@ namespace avaness.ToolSwitcherPlugin
             public override void Init(MyObjectBuilder_SessionComponent sessionComponent)
             {
                 MyLog.Default.WriteLineAndConsole("Tool Plugin Session loaded.");
+                BvApiClient.Init("ToolSwitcherPlugin");
             }
 
             protected override void UnloadData()
@@ -41,25 +43,25 @@ namespace avaness.ToolSwitcherPlugin
 
             public override void UpdateAfterSimulation()
             {
-                if (MySession.Static?.LocalCharacter == null || MyAPIGateway.Input.DeltaMouseScrollWheelValue() == 0)
+                if (MySession.Static == null)
+                    return;
+
+                MyCharacter ch = MySession.Static.LocalCharacter;
+                if (ch == null)
                     return;
 
                 if (!start)
                     Start();
 
-                if(IsEnabled())
+                int input = MyInput.Static.DeltaMouseScrollWheelValue();
+                if (ch.ToolbarType == MyToolbarType.Character && input != 0 && IsEnabled())
                 {
-                    MyCharacter ch = MySession.Static.LocalCharacter;
-
                     var hand = GetHand(ch);
                     if (hand != null)
                     {
-                        if (ch.ToolbarType == MyToolbarType.Character)
-                        {
-                            MyToolbar toolbar = ch.Toolbar;
-                            if (toolbar != null)
-                                group.EquipNext(hand, ch.GetInventory(), toolbar, MyAPIGateway.Input.DeltaMouseScrollWheelValue() > 0);
-                        }
+                        MyToolbar toolbar = ch.Toolbar;
+                        if (toolbar != null)
+                            group.EquipNext(hand, ch.GetInventory(), toolbar, input > 0);
                     }
                 }
 
@@ -77,7 +79,7 @@ namespace avaness.ToolSwitcherPlugin
             private bool IsEnabled()
             {
                 return  MyAPIGateway.Gui.GetCurrentScreen == MyTerminalPageEnum.None && !MyAPIGateway.Gui.IsCursorVisible && !MyAPIGateway.Gui.ChatEntryVisible
-                    && !MyAPIGateway.Session.IsCameraUserControlledSpectator && string.IsNullOrWhiteSpace(MyAPIGateway.Gui.ActiveGamePlayScreen);
+                    && !MyAPIGateway.Session.IsCameraUserControlledSpectator && string.IsNullOrWhiteSpace(MyAPIGateway.Gui.ActiveGamePlayScreen) && (!BvApiClient.Registered || !BvApiClient.Open);
             }
 
             private HandItem GetHand(MyCharacter ch)

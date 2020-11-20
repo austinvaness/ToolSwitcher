@@ -1,14 +1,5 @@
-﻿using avaness.ToolSwitcherPlugin.Tools;
-using Sandbox.Definitions;
-using Sandbox.Game;
-using Sandbox.Game.Entities;
+﻿using Sandbox.Game;
 using Sandbox.Game.Screens.Helpers;
-using Sandbox.Game.Weapons;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using VRage.Game;
 
 namespace avaness.ToolSwitcherPlugin.Slot

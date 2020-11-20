@@ -1,5 +1,4 @@
 ﻿using Sandbox.Game.Entities;
-using Sandbox.Game.Screens.Helpers;
 using Sandbox.Game.Weapons;
 using VRage.Game;
 

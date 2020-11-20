@@ -2,7 +2,6 @@
 using Sandbox.Definitions;
 using Sandbox.Game;
 using Sandbox.Game.Screens.Helpers;
-using System.Collections.Generic;
 using VRage.Game;
 
 namespace avaness.ToolSwitcherPlugin.Tools
