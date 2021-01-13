@@ -16,6 +16,11 @@ using avaness.ToolSwitcherPlugin.Slot;
 using Sandbox.ModAPI.Weapons;
 using VRage.Input;
 using DarkHelmet.BuildVision2;
+using Sandbox.Game;
+using VRage.Game.Entity;
+using VRage;
+using System.Collections.Generic;
+using avaness.ToolSwitcherPlugin.Definitions;
 
 namespace avaness.ToolSwitcherPlugin
 {
@@ -24,21 +29,30 @@ namespace avaness.ToolSwitcherPlugin
         [MySessionComponentDescriptor(MyUpdateOrder.AfterSimulation)]
         public class ToolPluginSession : MySessionComponentBase
         {
+            public static ToolPluginSession Instance;
+            public ToolDefinitions Definitions { get; } = new ToolDefinitions();
+
             private bool start;
-            private Tool<MyObjectBuilder_WelderDefinition> welder;
-            private Tool<MyObjectBuilder_AngleGrinderDefinition> grinder;
-            private Tool<MyObjectBuilder_HandDrillDefinition> drill;
             private ToolGroup group;
+            private PlayerCharacter inv;
+            //private readonly List<ItemEvent> itemRemoved = new List<ItemEvent>();
+            //private readonly List<ItemEvent> itemAdded = new List<ItemEvent>();
 
             public override void Init(MyObjectBuilder_SessionComponent sessionComponent)
             {
+                Instance = this;
                 MyLog.Default.WriteLineAndConsole("Tool Plugin Session loaded.");
                 BvApiClient.Init("ToolSwitcherPlugin");
             }
 
             protected override void UnloadData()
             {
-
+                if (inv != null)
+                {
+                    //inv.ItemRemoved -= Inv_ItemRemoved;
+                    inv.Unload();
+                }
+                Instance = null;
             }
 
             public override void UpdateAfterSimulation()
@@ -54,27 +68,54 @@ namespace avaness.ToolSwitcherPlugin
                     Start();
 
                 int input = MyInput.Static.DeltaMouseScrollWheelValue();
-                if (ch.ToolbarType == MyToolbarType.Character && input != 0 && IsEnabled())
+                if (ch.ToolbarType == MyToolbarType.Character && inv.Toolbar != null && inv.Inventory != null && IsEnabled())
                 {
-                    var hand = GetHand(ch);
-                    if (hand != null)
+                    /*if(disabledItem != null)
                     {
                         MyToolbar toolbar = ch.Toolbar;
                         if (toolbar != null)
-                            group.EquipNext(hand, ch.GetInventory(), toolbar, input > 0);
+                            group.ReplaceItem(disabledItem, ch.GetInventory(), disabledSlot, toolbar);
+                        disabledItem = null;
+                    }*/
+                    if(input != 0)
+                    {
+                        group.EquipNext(inv, input > 0);
+                        /*var hand = GetHand(ch);
+                        if (hand != null)
+                        {
+                            MyToolbar toolbar = ch.Toolbar;
+                            if (toolbar != null)
+                                group.EquipNext(hand, ch.GetInventory(), toolbar, input > 0);
+                        }*/
                     }
                 }
 
             }
 
+
             private void Start()
             {
-                welder = new Tool<MyObjectBuilder_WelderDefinition>();
-                grinder = new Tool<MyObjectBuilder_AngleGrinderDefinition>();
-                drill = new Tool<MyObjectBuilder_HandDrillDefinition>();
-                group = new ToolGroup(welder, grinder, drill);
+                Definitions.Add<MyObjectBuilder_WelderDefinition>();
+                Definitions.Add<MyObjectBuilder_AngleGrinderDefinition>();
+                Definitions.Add<MyObjectBuilder_HandDrillDefinition>();
+                group = new ToolGroup(Definitions);
+                inv = new PlayerCharacter(MySession.Static.LocalHumanPlayer, Definitions);
+                //inv.ItemRemoved += Inv_ItemRemoved;
+                //inv.ItemAdded += Inv_ItemAdded;
+
                 start = true;
             }
+
+            /*private void Inv_ItemAdded(HandItem item, IEnumerable<ToolSlot> slots)
+            {
+                foreach (ToolSlot slot in slots)
+                    itemAdded.Add(new ItemEvent(item, slot));
+            }
+
+            private void Inv_ItemRemoved(HandItem item, ToolSlot slot)
+            {
+                itemRemoved.Add(new ItemEvent(item, slot));
+            }*/
 
             private bool IsEnabled()
             {
@@ -82,12 +123,24 @@ namespace avaness.ToolSwitcherPlugin
                     && !MyAPIGateway.Session.IsCameraUserControlledSpectator && string.IsNullOrWhiteSpace(MyAPIGateway.Gui.ActiveGamePlayScreen) && (!BvApiClient.Registered || !BvApiClient.Open);
             }
 
-            private HandItem GetHand(MyCharacter ch)
+            /*private HandItem GetHand(MyCharacter ch)
             {
                 var temp = ch.EquippedTool as IMyHandheldGunObject<MyToolBase>;
                 if (temp != null && !(temp is IMyBlockPlacerBase))
                     return new HandItem(temp);
                 return null;
+            }*/
+
+            private class ItemEvent
+            {
+                public HandItem Item { get; }
+                public ToolSlot Slot { get; }
+
+                public ItemEvent(HandItem item, ToolSlot slot)
+                {
+                    Item = item;
+                    Slot = slot;
+                }
             }
 
         }

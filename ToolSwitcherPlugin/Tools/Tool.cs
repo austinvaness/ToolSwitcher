@@ -1,4 +1,5 @@
-﻿using avaness.ToolSwitcherPlugin.Slot;
+﻿using avaness.ToolSwitcherPlugin.Definitions;
+using avaness.ToolSwitcherPlugin.Slot;
 using Sandbox.Definitions;
 using Sandbox.Game;
 using Sandbox.Game.Entities;
@@ -13,78 +14,42 @@ using VRage.Game;
 
 namespace avaness.ToolSwitcherPlugin.Tools
 {
-    public class Tool<T> : ITool where T : MyObjectBuilder_EngineerToolBaseDefinition
+    public class Tool
     {
-        private readonly MyEngineerToolBaseDefinition[] defs;
-        private readonly Dictionary<MyDefinitionId, int> ids;
+        private readonly IToolDefinition def;
 
-        public MyEngineerToolBaseDefinition[] Defs => defs;
-
-        public Tool()
+        public Tool(IToolDefinition def)
         {
-            SortedDictionary<string, MyEngineerToolBaseDefinition> defs = new SortedDictionary<string, MyEngineerToolBaseDefinition>();
-            foreach(var def in MyDefinitionManager.Static.GetHandItemDefinitions())
-            {
-                if (def.GetObjectBuilder() is T)
-                {
-                    defs[def.Id.SubtypeName] = (MyEngineerToolBaseDefinition)def;
-                }
-            }
-            this.defs = defs.Values.ToArray();
-
-            this.defs = new MyEngineerToolBaseDefinition[defs.Count];
-            ids = new Dictionary<MyDefinitionId, int>();
-            int i = 0;
-            foreach(MyEngineerToolBaseDefinition def in defs.Values)
-            {
-                ids[def.Id] = i;
-                this.defs[i] = def; 
-                i++;
-            }
+            this.def = def;
         }
 
-
-        public bool Contains(HandItem hand)
+        public bool Contains(MyDefinitionId physicalId)
         {
-            return ids.ContainsKey(hand.Id);
+            return def.ContainsPhysical(physicalId);
         }
 
-        public bool Contains(MyDefinitionId id)
+        public bool Equip(ToolSlot hand, PlayerCharacter ch)
         {
-            return ids.ContainsKey(id);
+            if (hand == null)
+                return false;
+
+            if (def.TryGetIndexPhysical(hand.PhysicalId, out int i))
+                return EquipBest(ch, i);
+            return EquipBest(ch);
         }
 
-        public void Equip(HandItem hand, MyInventory inv, MyToolbar toolbar, ToolSlot slot)
-        {
-            if(hand != null)
-            {
-                if (hand != null && ids.TryGetValue(hand.Id, out int i))
-                    EquipBest(inv, toolbar, slot, i);
-                else
-                    EquipBest(inv, toolbar, slot);
-            }
-            else
-            {
-                EquipBest(inv, toolbar, slot);
-            }
-        }
-
-        private void EquipBest(MyInventory inv, MyToolbar toolbar, ToolSlot slot, int min = -1)
+        private bool EquipBest(PlayerCharacter ch, int min = -1)
         {
             MyFixedPoint one = 1;
-            for (int i = defs.Length - 1; i > min; i--)
+            for (int i = def.Length - 1; i > min; i--)
             {
-                if (MyAPIGateway.Session.CreativeMode || inv.ContainItems(one, defs[i].PhysicalItemId))
+                if (MyAPIGateway.Session.CreativeMode || ch.Inventory.ContainItems(one, def[i].PhysicalItemId))
                 {
-                    slot.SetTo(toolbar, defs[i].PhysicalItemId);
-                    return;
+                    ch.Toolbar.SetTool(def[i].PhysicalItemId);
+                    return true;
                 }
             }
-        }
-
-        private IMyHandheldGunObject<MyDeviceBase> GetHand()
-        {
-            return (IMyHandheldGunObject<MyDeviceBase>)MySession.Static.LocalCharacter.EquippedTool;
+            return false;
         }
     }
 }

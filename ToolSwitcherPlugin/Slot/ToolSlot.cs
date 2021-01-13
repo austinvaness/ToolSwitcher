@@ -1,29 +1,104 @@
-﻿using Sandbox.Game;
+﻿using Sandbox.Definitions;
+using Sandbox.Game;
 using Sandbox.Game.Screens.Helpers;
+using Sandbox.ModAPI;
+using System;
+using System.Collections.Generic;
 using VRage.Game;
 
 namespace avaness.ToolSwitcherPlugin.Slot
 {
-    public class ToolSlot
+    public class ToolSlot : IEquatable<ToolSlot>
     {
-        private readonly int page;
-        private readonly int slot;
+        public MyDefinitionId PhysicalId { get; private set; }
+        public int Page { get; }
+        public int Slot { get; }
 
-        public ToolSlot(int page, int slot)
+        private readonly int index;
+        private MyObjectBuilder_ToolbarItem ob;
+
+        public ToolSlot(int page, int slot, MyToolbarItemDefinition item)
         {
-            this.page = page;
-            this.slot = slot;
+            Page = page;
+            Slot = slot;
+            index = page * 9 + slot;
+            PhysicalId = item.Definition.Id;
+            ob = item.GetObjectBuilder();
         }
 
-        public void SetTo(MyToolbar toolbar, MyDefinitionId physicalId)
+        public ToolSlot(int index, MyToolbarItemDefinition item)
         {
-            toolbar.SwitchToPage(page);
-            MyVisualScriptLogicProvider.SetToolbarSlotToItemLocal(slot, physicalId);
-            toolbar.ActivateItemAtSlot(slot);
+            Page = index / 9;
+            Slot = index % 9;
+            this.index = index;
+            PhysicalId = item.Definition.Id;
+            ob = item.GetObjectBuilder();
         }
 
-        public static ToolSlot GetSlot(MyToolbar toolbar)
+        public void SetTo(MyToolbar toolbar, MyDefinitionId physicalId, bool activate = false)
         {
+            MyDefinitionBase defBase;
+            if (!MyDefinitionManager.Static.TryGetDefinition(physicalId, out defBase))
+                return;
+
+            MyObjectBuilder_ToolbarItem ob = MyToolbarItemFactory.ObjectBuilderFromDefinition(defBase);
+            MyToolbarItem toolbarItem = MyToolbarItemFactory.CreateToolbarItem(ob);
+            toolbar.SetItemAtIndex(index, toolbarItem);
+
+            this.ob = ob;
+            PhysicalId = defBase.Id;
+        }
+
+        public void Clear(MyToolbar toolbar)
+        {
+            toolbar.SetItemAtIndex(index, null);
+        }
+
+        public void CopyFrom(MyToolbar toolbar, ToolSlot slot)
+        {
+            MyToolbarItem toolbarItem = MyToolbarItemFactory.CreateToolbarItem(slot.ob);
+            toolbar.SetItemAtIndex(index, toolbarItem);
+
+            ob = slot.ob;
+            PhysicalId = slot.PhysicalId;
+        }
+
+        public void Activate(MyToolbar toolbar)
+        {
+            if (toolbar.CurrentPage != Page)
+                toolbar.SwitchToPage(Page);
+            toolbar.ActivateItemAtIndex(index);
+        }
+
+        public override bool Equals(object obj)
+        {
+            return Equals(obj as ToolSlot);
+        }
+
+        public bool Equals(ToolSlot other)
+        {
+            return other != null &&
+                   index == other.index;
+        }
+
+        public override int GetHashCode()
+        {
+            return -1982729373 + index.GetHashCode();
+        }
+
+        public static bool operator ==(ToolSlot left, ToolSlot right)
+        {
+            return EqualityComparer<ToolSlot>.Default.Equals(left, right);
+        }
+
+        public static bool operator !=(ToolSlot left, ToolSlot right)
+        {
+            return !(left == right);
+        }
+
+        /*public static ToolSlot GetSlot(MyToolbar toolbar)
+        {
+
             int currPageStart = toolbar.SlotToIndex(0);
             for(int i = currPageStart; i <= currPageStart + 8; i++)
             {
@@ -32,7 +107,7 @@ namespace avaness.ToolSwitcherPlugin.Slot
                     return new ToolSlot(toolbar.CurrentPage, i - currPageStart);
             }
             return new ToolSlot(toolbar.CurrentPage, toolbar.SelectedSlot ?? 0);
-        }
+        }*/
 
     }
 
