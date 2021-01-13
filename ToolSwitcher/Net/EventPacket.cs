@@ -27,7 +27,7 @@ namespace avaness.ToolSwitcher.Net
             this.id = id;
         }
 
-        public static void Received(byte[] data)
+        public static void Received(ushort id, byte[] data, ulong sender, bool fromServer)
         {
             EventPacket packet = MyAPIGateway.Utilities.SerializeFromBinary<EventPacket>(data);
             if (packet != null)

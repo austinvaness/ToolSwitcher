@@ -42,7 +42,7 @@ namespace avaness.ToolSwitcher
             MyVisualScriptLogicProvider.PlayerDropped -= ItemDropped;
             MyVisualScriptLogicProvider.PlayerPickedUp -= ItemPickedUp;
             MyVisualScriptLogicProvider.PlayerSpawned -= PlayerSpawned;
-            MyAPIGateway.Multiplayer.UnregisterMessageHandler(EventPacket.PacketId, EventPacket.Received);
+            MyAPIGateway.Multiplayer.UnregisterSecureMessageHandler(EventPacket.PacketId, EventPacket.Received);
         }
 
         private void Start()
@@ -57,7 +57,7 @@ namespace avaness.ToolSwitcher
             }
             else
             {
-                MyAPIGateway.Multiplayer.RegisterMessageHandler(EventPacket.PacketId, EventPacket.Received);
+                MyAPIGateway.Multiplayer.RegisterSecureMessageHandler(EventPacket.PacketId, EventPacket.Received);
             }
 
             if(IsClient)
