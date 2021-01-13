@@ -103,6 +103,7 @@ namespace avaness.ToolSwitcherPlugin
                 //inv.ItemRemoved += Inv_ItemRemoved;
                 //inv.ItemAdded += Inv_ItemAdded;
 
+                DisableModVersion();
                 start = true;
             }
 
@@ -143,6 +144,10 @@ namespace avaness.ToolSwitcherPlugin
                 }
             }
 
+            private void DisableModVersion()
+            {
+                MyAPIGateway.Utilities.SendModMessage(2211605465, false);
+            }
         }
 
         public void Dispose()

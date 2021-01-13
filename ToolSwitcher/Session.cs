@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using avaness.ToolSwitcher.Net;
 using avaness.ToolSwitcher.Tools;
 using DarkHelmet.BuildVision2;
@@ -20,6 +21,7 @@ namespace avaness.ToolSwitcher
         private bool equipAll = false;
         private readonly List<EquippedToolAction> equippedTools = new List<EquippedToolAction>();
         private ToolGroups config;
+        private bool modOverrideEnabled = true;
 
         private bool IsServer => MyAPIGateway.Session.IsServer || MyAPIGateway.Session.OnlineMode == MyOnlineModeEnum.OFFLINE;
         private bool IsClient => !IsServer || !MyAPIGateway.Utilities.IsDedicated;
@@ -43,6 +45,18 @@ namespace avaness.ToolSwitcher
             MyVisualScriptLogicProvider.PlayerPickedUp -= ItemPickedUp;
             MyVisualScriptLogicProvider.PlayerSpawned -= PlayerSpawned;
             MyAPIGateway.Multiplayer.UnregisterSecureMessageHandler(EventPacket.PacketId, EventPacket.Received);
+            
+        }
+
+        public override void BeforeStart()
+        {
+            MyAPIGateway.Utilities.RegisterMessageHandler(2211605465, ReceiveModMessage);
+        }
+
+        private void ReceiveModMessage(object obj)
+        {
+            if (obj is bool)
+                modOverrideEnabled = (bool)obj;
         }
 
         private void Start()
@@ -194,7 +208,7 @@ namespace avaness.ToolSwitcher
 
         private bool IsEnabled()
         {
-            return config.ModEnabled && MyAPIGateway.Gui.GetCurrentScreen == MyTerminalPageEnum.None && !MyAPIGateway.Gui.IsCursorVisible && !MyAPIGateway.Gui.ChatEntryVisible 
+            return modOverrideEnabled && config.ModEnabled && MyAPIGateway.Gui.GetCurrentScreen == MyTerminalPageEnum.None && !MyAPIGateway.Gui.IsCursorVisible && !MyAPIGateway.Gui.ChatEntryVisible 
                 && !MyAPIGateway.Session.IsCameraUserControlledSpectator && string.IsNullOrWhiteSpace(MyAPIGateway.Gui.ActiveGamePlayScreen) && (!BvApiClient.Registered || !BvApiClient.Open);
         }
 
