@@ -85,26 +85,28 @@ namespace avaness.ToolSwitcher
 
         private void PlayerSpawned(long playerId)
         {
-            new EventPacket(EventPacket.Mode.Spawn, new MyDefinitionId()).SendTo(playerId);
+            if(modOverrideEnabled)
+                new EventPacket(EventPacket.Mode.Spawn, new MyDefinitionId()).SendTo(playerId);
         }
 
         private void ItemPickedUp(string itemTypeName, string itemSubTypeName, string entityName, long playerId, int amount)
         {
             MyDefinitionId handId;
-            if (amount == 1 && itemTypeName == "MyObjectBuilder_PhysicalGunObject" && MyDefinitionId.TryParse(itemTypeName, itemSubTypeName, out handId))
+            if (modOverrideEnabled && amount == 1 && itemTypeName == "MyObjectBuilder_PhysicalGunObject" && MyDefinitionId.TryParse(itemTypeName, itemSubTypeName, out handId))
                 new EventPacket(EventPacket.Mode.PickUp, handId).SendTo(playerId);
         }
 
         private void ItemDropped(string itemTypeName, string itemSubTypeName, long playerId, int amount)
         {
             MyDefinitionId handId;
-            if (amount == 1 && itemTypeName == "MyObjectBuilder_PhysicalGunObject" && MyDefinitionId.TryParse(itemTypeName, itemSubTypeName, out handId))
+            if (modOverrideEnabled && amount == 1 && itemTypeName == "MyObjectBuilder_PhysicalGunObject" && MyDefinitionId.TryParse(itemTypeName, itemSubTypeName, out handId))
                 new EventPacket(EventPacket.Mode.Drop, handId).SendTo(playerId);
         }
 
         public void EquipAll()
         {
-            equipAll = true;
+            if(modOverrideEnabled)
+                equipAll = true;
         }
 
         public void CheckItem(MyDefinitionId id, bool added)
@@ -112,7 +114,7 @@ namespace avaness.ToolSwitcher
             Tool t;
             ToolGroup tg;
             int index;
-            if (config.ModEnabled && IsToolbarCharacter() && config.TryGetTool(id, out t, out index, out tg) && t.Enabled)
+            if (modOverrideEnabled && config.ModEnabled && IsToolbarCharacter() && config.TryGetTool(id, out t, out index, out tg) && t.Enabled)
             {
                 if (added)
                     t.Equip();
@@ -182,7 +184,7 @@ namespace avaness.ToolSwitcher
 
         private void ToolbarItemChanged(long entityId, string typeId, string subtypeId, int page, int slot)
         {
-            if (MyAPIGateway.Session.Player == null)
+            if (MyAPIGateway.Session.Player == null || !modOverrideEnabled)
                 return;
 
             MyDefinitionId handId;
