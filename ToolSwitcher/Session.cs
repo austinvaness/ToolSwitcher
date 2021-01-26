@@ -201,6 +201,13 @@ namespace avaness.ToolSwitcher
             }
         }
 
+        public void EquipItemAt(MyDefinitionId item, int slot, long identityId)
+        {
+            MyVisualScriptLogicProvider.ToolbarItemChanged -= ToolbarItemChanged;
+            MyVisualScriptLogicProvider.SetToolbarSlotToItem(slot, item, identityId);
+            MyVisualScriptLogicProvider.ToolbarItemChanged += ToolbarItemChanged;
+        }
+
         public static bool IsToolbarCharacter()
         {
             if (MyAPIGateway.Session.Player.Character == null)

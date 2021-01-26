@@ -357,7 +357,7 @@ namespace avaness.ToolSwitcher.Tools
         private void SetToolSlot(MyDefinitionId id)
         {
             SelectPage();
-            MyVisualScriptLogicProvider.SetToolbarSlotToItem(Slot, id, p.IdentityId);
+            ToolSwitcherSession.Instance.EquipItemAt(id, Slot, p.IdentityId);
         }
 
         private void SelectPage()
