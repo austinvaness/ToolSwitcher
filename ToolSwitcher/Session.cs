@@ -187,6 +187,13 @@ namespace avaness.ToolSwitcher
         {
             try
             {
+                if(Instance == null)
+                {
+                    // WTF
+                    MyVisualScriptLogicProvider.ToolbarItemChanged -= ToolbarItemChanged;
+                    return;
+                }
+
                 if (MyAPIGateway.Session.Player == null || !modOverrideEnabled)
                     return;
 
