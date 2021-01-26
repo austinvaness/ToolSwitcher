@@ -9,6 +9,7 @@ using VRage.Game;
 using VRage.Game.Components;
 using VRage.Game.ModAPI;
 using VRage.ModAPI;
+using VRage.Utils;
 
 namespace avaness.ToolSwitcher
 {
@@ -45,7 +46,7 @@ namespace avaness.ToolSwitcher
             MyVisualScriptLogicProvider.PlayerPickedUp -= ItemPickedUp;
             MyVisualScriptLogicProvider.PlayerSpawned -= PlayerSpawned;
             MyAPIGateway.Multiplayer.UnregisterSecureMessageHandler(EventPacket.PacketId, EventPacket.Received);
-            
+            equippedTools.Clear();
         }
 
         public override void BeforeStart()
@@ -184,27 +185,34 @@ namespace avaness.ToolSwitcher
 
         private void ToolbarItemChanged(long entityId, string typeId, string subtypeId, int page, int slot)
         {
-            if (MyAPIGateway.Session.Player == null || !modOverrideEnabled)
-                return;
-
-            MyDefinitionId handId;
-            if(config.ModEnabled && IsToolbarCharacter() && MyAPIGateway.Gui.ActiveGamePlayScreen == "MyGuiScreenCubeBuilder" 
-                && typeId == "MyObjectBuilder_PhysicalGunObject" && MyDefinitionId.TryParse(typeId, subtypeId, out handId))
+            try
             {
-                EquippedToolAction newToolAction = new EquippedToolAction(handId, page, slot);
-                foreach (EquippedToolAction toolAction in equippedTools)
+                if (MyAPIGateway.Session.Player == null || !modOverrideEnabled)
+                    return;
+
+                MyDefinitionId handId;
+                if (config.ModEnabled && IsToolbarCharacter() && MyAPIGateway.Gui.ActiveGamePlayScreen == "MyGuiScreenCubeBuilder"
+                    && typeId == "MyObjectBuilder_PhysicalGunObject" && MyDefinitionId.TryParse(typeId, subtypeId, out handId))
                 {
-                    if (toolAction.Update(newToolAction))
-                        return;
+                    EquippedToolAction newToolAction = new EquippedToolAction(handId, page, slot);
+                    foreach (EquippedToolAction toolAction in equippedTools)
+                    {
+                        if (toolAction.Update(newToolAction))
+                            return;
+                    }
+                    equippedTools.Add(newToolAction);
                 }
-                equippedTools.Add(newToolAction);
+            }
+            catch (Exception e) 
+            {
+                MyLog.Default.WriteLineAndConsole("ERROR in ToolbarItemChanged(): " + e);
             }
         }
 
         public void EquipItemAt(MyDefinitionId item, int slot, long identityId)
         {
             MyVisualScriptLogicProvider.ToolbarItemChanged -= ToolbarItemChanged;
-            MyVisualScriptLogicProvider.SetToolbarSlotToItem(slot, item, identityId);
+            MyVisualScriptLogicProvider.SetToolbarSlotToItemLocal(slot, item, identityId);
             MyVisualScriptLogicProvider.ToolbarItemChanged += ToolbarItemChanged;
         }
 

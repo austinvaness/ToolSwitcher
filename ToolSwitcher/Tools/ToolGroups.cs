@@ -100,6 +100,7 @@ namespace avaness.ToolSwitcher.Tools
         public void Unload()
         {
             hud.Unload();
+            groups.Clear();
         }
 
         private void OnHudReady()
