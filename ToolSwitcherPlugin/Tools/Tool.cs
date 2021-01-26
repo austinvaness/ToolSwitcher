@@ -7,6 +7,7 @@ using Sandbox.Game.Screens.Helpers;
 using Sandbox.Game.Weapons;
 using Sandbox.Game.World;
 using Sandbox.ModAPI;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using VRage;
@@ -38,6 +39,11 @@ namespace avaness.ToolSwitcherPlugin.Tools
             return EquipBest(ch);
         }
 
+        public bool Equip(PlayerCharacter ch)
+        {
+            return EquipBest(ch);
+        }
+
         private bool EquipBest(PlayerCharacter ch, int min = -1)
         {
             MyFixedPoint one = 1;
@@ -49,6 +55,13 @@ namespace avaness.ToolSwitcherPlugin.Tools
                     return true;
                 }
             }
+            return false;
+        }
+
+        public bool EquipUpgrade(MyDefinitionId physicalId, PlayerCharacter ch)
+        {
+            if (def.TryGetIndexPhysical(physicalId, out int i))
+                return EquipBest(ch, i);
             return false;
         }
     }

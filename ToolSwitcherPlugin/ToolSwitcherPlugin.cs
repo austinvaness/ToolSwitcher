@@ -70,6 +70,16 @@ namespace avaness.ToolSwitcherPlugin
                 int input = MyInput.Static.DeltaMouseScrollWheelValue();
                 if (ch.ToolbarType == MyToolbarType.Character && inv.Toolbar != null && inv.Inventory != null && IsEnabled())
                 {
+                    if(inv.Toolbar.NeedsTool)
+                    {
+                        inv.CheckForUpgrade = false;
+                        group.EquipAny(inv);
+                    }
+                    else if(inv.CheckForUpgrade)
+                    {
+                        inv.CheckForUpgrade = false;
+                        group.EquipUpgrade(inv);
+                    }
                     /*if(disabledItem != null)
                     {
                         MyToolbar toolbar = ch.Toolbar;

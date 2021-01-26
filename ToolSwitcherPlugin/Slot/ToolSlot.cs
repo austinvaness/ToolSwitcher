@@ -35,7 +35,7 @@ namespace avaness.ToolSwitcherPlugin.Slot
             ob = item.GetObjectBuilder();
         }
 
-        public void SetTo(MyToolbar toolbar, MyDefinitionId physicalId, bool activate = false)
+        public void SetTo(MyToolbar toolbar, MyDefinitionId physicalId)
         {
             MyDefinitionBase defBase;
             if (!MyDefinitionManager.Static.TryGetDefinition(physicalId, out defBase))
@@ -56,6 +56,9 @@ namespace avaness.ToolSwitcherPlugin.Slot
 
         public void CopyFrom(MyToolbar toolbar, ToolSlot slot)
         {
+            if (PhysicalId == slot.PhysicalId)
+                return;
+
             MyToolbarItem toolbarItem = MyToolbarItemFactory.CreateToolbarItem(slot.ob);
             toolbar.SetItemAtIndex(index, toolbarItem);
 

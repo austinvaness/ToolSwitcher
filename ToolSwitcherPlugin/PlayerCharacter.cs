@@ -22,6 +22,8 @@ namespace avaness.ToolSwitcherPlugin
     {
         public PlayerToolbar Toolbar { get; private set; }
         public MyInventory Inventory { get; private set; }
+        public bool CheckForUpgrade { get; set; }
+
 
         private readonly MyPlayer p;
         private readonly ToolDefinitions defs;
@@ -54,21 +56,29 @@ namespace avaness.ToolSwitcherPlugin
                     Ch_OnClose(this.ch);
                 ch.OnClosing += Ch_OnClose;
                 Inventory = ch.GetInventory();
-                //Inventory.ContentsAdded += Inv_ContentsChanged;
+                Inventory.InventoryContentChanged += Inventory_InventoryContentChanged;
                 //ch.Toolbar.ItemUpdated += Toolbar_ItemUpdated;
                 Toolbar = new PlayerToolbar(ch.Toolbar, defs);
                 this.ch = ch;
             }
         }
 
-        /*private void Toolbar_ItemUpdated(MyToolbar toolbar, MyToolbar.IndexArgs slot, MyToolbarItem.ChangeInfo change)
+        private void Inventory_InventoryContentChanged(MyInventoryBase inventory, MyPhysicalInventoryItem item, MyFixedPoint amount)
         {
-            HandItem item;
-            if(ItemRemoved != null && change == MyToolbarItem.ChangeInfo.Enabled && TryGetHandItem(toolbar, slot.ItemIndex, out item))
-                ItemRemoved.Invoke(item, new ToolSlot(slot.ItemIndex, defs));
-        }*/
+            if(amount == 1)
+            {
+                MyObjectBuilder_PhysicalGunObject physicalItem = item.Content as MyObjectBuilder_PhysicalGunObject;
+                if (physicalItem == null)
+                    return;
 
-        private bool TryGetHandItem(MyToolbar toolbar, int slotIndex, out HandItem hand)
+                if (!defs.ContainsPhysical(physicalItem.GetId()))
+                    return;
+
+                CheckForUpgrade = true;
+            }
+        }
+
+        /*private bool TryGetHandItem(MyToolbar toolbar, int slotIndex, out HandItem hand)
         {
             MyToolbarItemDefinition item = toolbar.GetItemAtIndex(slotIndex) as MyToolbarItemDefinition;
             if (item != null)
@@ -96,33 +106,12 @@ namespace avaness.ToolSwitcherPlugin
                 return false;
             hand = new HandItem(handItem.Id, physicalItemId);
             return true;
-        }
-
-        /*private void Inv_ContentsChanged(MyPhysicalInventoryItem item, MyFixedPoint amount)
-        {
-            HandItem hand;
-            if(ItemAdded != null && TryGetHandItem(item, out hand))
-            {
-                List<ToolSlot> slots = new List<ToolSlot>();
-                MyToolbar toolbar = ch.Toolbar;
-                for(int i = 0; i < toolbar.ItemCount; i++)
-                {
-                    MyToolbarItemDefinition slotDef = toolbar.GetItemAtIndex(i) as MyToolbarItemDefinition;
-                    if(slotDef != null)
-                    {
-
-                    }
-                }
-                if(slots.Count > 0)
-                    ItemAdded.Invoke(hand, slots);
-            }
         }*/
 
         private void Ch_OnClose(MyEntity e)
         {
             ch.OnClosing -= Ch_OnClose;
-            //Inventory.ContentsAdded -= Inv_ContentsChanged;
-            //ch.Toolbar.ItemUpdated -= Toolbar_ItemUpdated;
+            Inventory.InventoryContentChanged -= Inventory_InventoryContentChanged;
             Toolbar.Unload();
             Toolbar = null;
             ch = null;

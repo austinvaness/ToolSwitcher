@@ -1,6 +1,7 @@
 ﻿using avaness.ToolSwitcherPlugin.Definitions;
 using avaness.ToolSwitcherPlugin.Slot;
 using Sandbox.Game.Screens.Helpers;
+using System;
 using VRage.Game;
 
 namespace avaness.ToolSwitcherPlugin
@@ -12,22 +13,29 @@ namespace avaness.ToolSwitcherPlugin
         private int? activeToolPage;
         private readonly ToolSlot[] toolPages = new ToolSlot[9];
 
+        public bool NeedsTool { get; private set; }
+
         public PlayerToolbar(MyToolbar toolbar, ToolDefinitions defs)
         {
             this.toolbar = toolbar;
             this.defs = defs;
-            toolbar.SlotActivated += Toolbar_SlotActivated;
-            toolbar.Unselected += Toolbar_Unselected;
-            toolbar.ItemChanged += Toolbar_ItemChanged;
 
-            for(int i = 0; i < 9 * 9; i++)
+            ToolSlot firstTool = null;
+            for(int i = 80; i >= 0; i--)
             {
                 ToolSlot slot = CreateSlot(toolbar[i], i);
                 if (slot != null)
                 {
+                    if (firstTool == null)
+                        firstTool = slot;
+
                     ToolSlot current = toolPages[slot.Page];
                     if (current != null)
+                    {
                         current.Clear(toolbar);
+                        if (firstTool == current)
+                            firstTool = slot;
+                    }
                     toolPages[slot.Page] = slot;
                 }
             }
@@ -35,6 +43,38 @@ namespace avaness.ToolSwitcherPlugin
             ToolSlot initialTool = toolPages[toolbar.CurrentPage];
             if (initialTool != null)
                 activeToolPage = toolbar.CurrentPage;
+
+            if (initialTool == null)
+            {
+                if (firstTool == null)
+                    return;
+                initialTool = firstTool;
+            }
+
+            CopyFrom(initialTool);
+
+            toolbar.SlotActivated += Toolbar_SlotActivated;
+            toolbar.Unselected += Toolbar_Unselected;
+            //toolbar.ItemChanged += Toolbar_ItemChanged; Handled by CopyFrom
+            toolbar.ItemUpdated += Toolbar_ItemUpdated;
+        }
+
+        public void Unload()
+        {
+            toolbar.SlotActivated -= Toolbar_SlotActivated;
+            toolbar.Unselected -= Toolbar_Unselected;
+            toolbar.ItemChanged -= Toolbar_ItemChanged;
+            toolbar.ItemUpdated -= Toolbar_ItemUpdated;
+        }
+        
+        private void Toolbar_ItemUpdated(MyToolbar toolbar, MyToolbar.IndexArgs index, MyToolbarItem.ChangeInfo change)
+        {
+            if(change == MyToolbarItem.ChangeInfo.Enabled)
+            {
+                MyToolbarItemDefinition itemDef = toolbar[index.ItemIndex] as MyToolbarItemDefinition;
+                if (itemDef?.Definition != null && !itemDef.Enabled && defs.ContainsPhysical(itemDef.Definition.Id))
+                    NeedsTool = true;
+            }
         }
 
         private void Toolbar_ItemChanged(MyToolbar toolbar, MyToolbar.IndexArgs index, bool arg3)
@@ -46,17 +86,21 @@ namespace avaness.ToolSwitcherPlugin
                 if (current != null && current.Slot != slot.Slot)
                     current.Clear(toolbar);
                 toolPages[slot.Page] = slot;
+                CopyFrom(slot);
             }
         }
 
-        public void Unload()
+        private void CopyFrom(ToolSlot slot)
         {
-            toolbar.SlotActivated -= Toolbar_SlotActivated;
-            toolbar.Unselected -= Toolbar_Unselected;
             toolbar.ItemChanged -= Toolbar_ItemChanged;
+            foreach(ToolSlot s in toolPages)
+            {
+                if(s != null && s != slot)
+                    s.CopyFrom(toolbar, slot);
+            }
+            NeedsTool = false;
+            toolbar.ItemChanged += Toolbar_ItemChanged;
         }
-
-
 
         private void Toolbar_SlotActivated(MyToolbar toolbar, MyToolbar.SlotArgs slot, bool arg3)
         {
@@ -70,6 +114,7 @@ namespace avaness.ToolSwitcherPlugin
                 if (current == null || current.Slot != newSlot.Slot)
                     toolPages[newSlot.Page] = newSlot;
                 activeToolPage = newSlot.Page;
+                NeedsTool = false;
             }
         }
 
@@ -78,7 +123,7 @@ namespace avaness.ToolSwitcherPlugin
             activeToolPage = null;
         }
 
-        public ToolSlot GetSelectedSlot()
+        public ToolSlot GetHandSlot()
         {
             if (!activeToolPage.HasValue)
                 return null;
@@ -89,6 +134,21 @@ namespace avaness.ToolSwitcherPlugin
                 return currentSlot;
 
             return toolPages[activeToolPage.Value];
+        }
+
+        public ToolSlot GetToolSlot()
+        {
+            ToolSlot pageSlot = toolPages[toolbar.CurrentPage];
+            if (pageSlot != null)
+                return pageSlot;
+            if (activeToolPage.HasValue)
+                return toolPages[activeToolPage.Value];
+            foreach (ToolSlot s in toolPages)
+            {
+                if (s != null)
+                    return s;
+            }
+            return null;
         }
 
         private ToolSlot CreateSlot(MyToolbarItem item, int page, int slot)
@@ -109,23 +169,7 @@ namespace avaness.ToolSwitcherPlugin
 
         public void SetTool(MyDefinitionId physicalId)
         {
-            ToolSlot refer = null;
-            if(activeToolPage.HasValue)
-            {
-                refer = toolPages[activeToolPage.Value];
-            }
-            else
-            {
-                foreach(ToolSlot slot in toolPages)
-                {
-                    if(slot != null)
-                    {
-                        refer = slot;
-                        break;
-                    }
-                }
-            }
-
+            ToolSlot refer = GetToolSlot();
             if (refer == null)
                 return;
 
@@ -133,14 +177,11 @@ namespace avaness.ToolSwitcherPlugin
 
             refer.SetTo(toolbar, physicalId);
 
-            foreach(ToolSlot slot in toolPages)
-            {
-                if (slot != null && slot != refer)
-                    slot.CopyFrom(toolbar, refer);
-            }
+            CopyFrom(refer);
 
             refer.Activate(toolbar);
             activeToolPage = refer.Page;
+            NeedsTool = false;
         }
     }
 }

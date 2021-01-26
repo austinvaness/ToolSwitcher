@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using VRage.Game;
 using System.Linq;
 using Sandbox.ModAPI;
+using System;
 
 namespace avaness.ToolSwitcherPlugin.Tools
 {
@@ -23,7 +24,7 @@ namespace avaness.ToolSwitcherPlugin.Tools
 
         public void EquipNext(PlayerCharacter ch, bool dir)
         {
-            ToolSlot hand = ch.Toolbar.GetSelectedSlot();
+            ToolSlot hand = ch.Toolbar.GetHandSlot();
 
             if (hand == null)
                 return;
@@ -32,42 +33,76 @@ namespace avaness.ToolSwitcherPlugin.Tools
             {
                 if(tools[i].Contains(hand.PhysicalId))
                 {
-                    if(dir)
-                    {
-                        if (i < tools.Length - 1)
-                            tools[i + 1].Equip(hand, ch);
-                        else
-                            tools[0].Equip(hand, ch);
-                    }
-                    else
-                    {
-                        if (i > 0)
-                            tools[i - 1].Equip(hand, ch);
-                        else
-                            tools[tools.Length - 1].Equip(hand, ch);
-                    }
+                    EquipNext(i, dir, hand, ch);
                     return;
                 }
             }
         }
 
-        /*public void ReplaceItem(HandItem item, MyInventory inv, ToolSlot slot, MyToolbar toolbar)
+        private void EquipNext(int index, bool dir, ToolSlot hand, PlayerCharacter ch)
         {
-            for(int i = 0; i < tools.Length; i++)
+            if(dir)
             {
-                if(tools[i].Contains(item))
+                for(int i = (index + 1) % tools.Length; i != index; i = (i + 1) % tools.Length)
                 {
-                    if (tools[i].Equip(item, inv, toolbar, slot))
+                    if (tools[i].Equip(hand, ch))
                         return;
-
-                    if (i < tools.Length - 1)
-                        tools[i + 1].Equip(item, inv, toolbar, slot);
-                    else
-                        tools[0].Equip(item, inv, toolbar, slot);
-                    return;
                 }
             }
-        }*/
+            else
+            {
+                int i = index - 1;
+                if (i < 0)
+                    i = tools.Length - 1;
+
+                while(i != index)
+                {
+                    if (tools[i].Equip(hand, ch))
+                        return;
+
+                    i--;
+                    if (i < 0)
+                        i = tools.Length - 1;
+                }
+            }
+        }
+
+        public void EquipAny(PlayerCharacter ch)
+        {
+            ToolSlot current = ch.Toolbar.GetToolSlot();
+            if (current != null && TryFindTool(current.PhysicalId, out Tool currentTool) && currentTool.Equip(ch))
+                return;
+
+            foreach (Tool t in tools)
+            {
+                if (t.Equip(ch))
+                    return;
+            }
+        }
+
+        public void EquipUpgrade(PlayerCharacter ch)
+        {
+            ToolSlot slot = ch.Toolbar.GetToolSlot();
+            if (slot == null)
+                return;
+
+            if (TryFindTool(slot.PhysicalId, out Tool tool))
+                tool.EquipUpgrade(slot.PhysicalId, ch);
+        }
+
+        private bool TryFindTool(MyDefinitionId physicalId, out Tool tool)
+        {
+            foreach(Tool t in tools)
+            {
+                if (t.Contains(physicalId))
+                {
+                    tool = t;
+                    return true;
+                }
+            }
+            tool = null;
+            return false;
+        }
 
         /*private ToolSlot GetSlot(MyToolbar toolbar)
         {
