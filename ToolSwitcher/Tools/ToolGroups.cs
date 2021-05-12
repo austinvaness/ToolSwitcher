@@ -27,6 +27,7 @@ namespace avaness.ToolSwitcher.Tools
         private HudAPIv2.MenuKeybindInput upgradeInput;
         private HudAPIv2.MenuKeybindInput downgradeInput;
         private HudAPIv2.MenuItem modEnabledInput;
+        private bool loaded = false;
 
         private bool menuEnabled = true;
         [XmlIgnore]
@@ -396,6 +397,7 @@ namespace avaness.ToolSwitcher.Tools
                     ToolGroups config = MyAPIGateway.Utilities.SerializeFromXML<ToolGroups>(xmlText);
                     if (config == null)
                         throw new NullReferenceException("Failed to serialize from xml.");
+                    config.loaded = true;
                     config.Save();
                     return config;
                 }
@@ -403,6 +405,7 @@ namespace avaness.ToolSwitcher.Tools
             catch { }
 
             ToolGroups result = new ToolGroups();
+            result.loaded = true;
             result.Save();
             return result;
         }
@@ -432,7 +435,7 @@ namespace avaness.ToolSwitcher.Tools
             if (equip.HasValue)
                 toolbar = equip.Value;
             else
-                toolbar = ToolSwitcherSession.IsToolbarCharacter() && ModEnabled;
+                toolbar = ToolSwitcherSession.IsToolbarCharacter() && ModEnabled && loaded;
 
             for (int i = groups.Count - 1; i >= 0; i--)
             {
