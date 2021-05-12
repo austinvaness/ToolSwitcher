@@ -18,6 +18,8 @@ namespace avaness.ToolSwitcher.Tools
     [XmlInclude(typeof(DrillTool))]
     [XmlInclude(typeof(RifleTool))]
     [XmlInclude(typeof(ModTool))]
+    [XmlInclude(typeof(PistolTool))]
+    [XmlInclude(typeof(LauncherTool))]
     public abstract class Tool : IEquatable<Tool>, IComparable<Tool>
     {
         protected abstract MyDefinitionId[] Ids { get; }

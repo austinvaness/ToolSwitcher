@@ -45,6 +45,8 @@ namespace avaness.ToolSwitcher.Tools
                     grinder.Menu.SetInteractable(value);
                     drill.Menu.SetInteractable(value);
                     rifle.Menu.SetInteractable(value);
+                    pistol.Menu.SetInteractable(value);
+                    launcher.Menu.SetInteractable(value);
                     hudCategory.Interactable = value;
                     equipInput.Interactable = value;
                     upgradeInput.Interactable = value;
@@ -64,10 +66,15 @@ namespace avaness.ToolSwitcher.Tools
             ToolEdited(grinder, false);
             drill = new DrillTool(MyKeys.None, 2, 0);
             ToolEdited(drill, false);
+            pistol = new PistolTool(MyKeys.None, 3, 0);
+            ToolEdited(pistol, false);
+            launcher = new LauncherTool(MyKeys.None, 3, 0);
+            ToolEdited(launcher, false);
             rifle = new RifleTool(MyKeys.None, 3, 0);
             ToolEdited(rifle, false);
 
-            foreach(MyHandItemDefinition def in MyDefinitionManager.Static.GetHandItemDefinitions())
+
+            foreach (MyHandItemDefinition def in MyDefinitionManager.Static.GetHandItemDefinitions())
             {
                 if(!def.Context.IsBaseGame)
                 {
@@ -118,6 +125,8 @@ namespace avaness.ToolSwitcher.Tools
             grinder.Menu = new ToolMenu(vanillaToolCat, grinder, this);
             drill.Menu = new ToolMenu(vanillaToolCat, drill, this);
             rifle.Menu = new ToolMenu(vanillaToolCat, rifle, this);
+            pistol.Menu = new ToolMenu(vanillaToolCat, pistol, this);
+            launcher.Menu = new ToolMenu(vanillaToolCat, launcher, this);
 
             HudAPIv2.MenuSubCategory unknownCategory = null;
             Dictionary<string, HudAPIv2.MenuSubCategory> modToolCats = new Dictionary<string, HudAPIv2.MenuSubCategory>();
@@ -243,6 +252,48 @@ namespace avaness.ToolSwitcher.Tools
                     rifle.Menu = menu;
                 }
                 ToolEdited(rifle);
+            }
+        }
+
+        private PistolTool pistol;
+        [XmlElement]
+        public PistolTool Pistol
+        {
+            get
+            {
+                return pistol;
+            }
+            set
+            {
+                ToolMenu menu = pistol.Menu;
+                pistol = value;
+                if (menu != null)
+                {
+                    menu.SetTool(pistol);
+                    pistol.Menu = menu;
+                }
+                ToolEdited(pistol);
+            }
+        }
+
+        private LauncherTool launcher;
+        [XmlElement]
+        public LauncherTool Launcher
+        {
+            get
+            {
+                return launcher;
+            }
+            set
+            {
+                ToolMenu menu = launcher.Menu;
+                launcher = value;
+                if (menu != null)
+                {
+                    menu.SetTool(launcher);
+                    launcher.Menu = menu;
+                }
+                ToolEdited(launcher);
             }
         }
 
